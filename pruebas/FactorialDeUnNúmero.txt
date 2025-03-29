@@ -1,0 +1,15 @@
+spawn;
+
+caves section¿
+Hierro N := 5;
+Hierro i ;
+Hierro resultado = 0;
+?
+Mobs section¿
+piglin(i = 1, i<=N, i+=1)¿
+    resultado := resultado * i;
+?
+
+Tradeoff resultado;
+?
+muerte;

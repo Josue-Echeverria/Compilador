@@ -1,0 +1,19 @@
+spawn;
+Blocks section¿
+forjado Oro vocales := ('a','e','i','o','u')
+?
+
+caves section
+Hierro i := 0
+Lingote texto := "Hola Mundo"
+Hierro total := 0
+
+Mobs section¿
+creeper i < largo texto ¿
+    zombie contiene(vocales, texto@i);
+        esqueleto total+=1 ;
+    i+=1;
+?
+Tradeoff total;
+?
+muerte;

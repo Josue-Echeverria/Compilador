@@ -1,0 +1,18 @@
+spawn;
+
+caves section¿
+forjado Hierro a := 0;
+forjado Hierro b := 1;
+forjado Hierro temp := 0;
+Hierro N := 10;
+Hierro i := 0;
+?
+Mobs section¿
+piglin(i = 0, i < N, i+=1)¿
+    Tradeoff a;
+    temp := a + b;
+    a := b;
+    b := temp;
+?
+?
+muerte;

@@ -1,0 +1,9 @@
+spawn;
+
+caves section¿
+Hierro aleatorio := Random(1,100);
+?
+Mobs section¿
+Tradeoff aleatorio;
+?
+muerte;

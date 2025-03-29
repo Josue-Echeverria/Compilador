@@ -1,0 +1,19 @@
+spawn;
+Blocks section¿
+forjado Esmeralda nums := [2, 4, 6, 8]
+?
+
+caves section¿
+Hierro suma := 0;
+Hierro i := 0;
+?
+
+Mobs section¿
+creeper i < contar nums ¿
+    suma := suma + nums@i;
+    i+=1;
+?
+
+Tradeoff suma;
+?
+muerte;

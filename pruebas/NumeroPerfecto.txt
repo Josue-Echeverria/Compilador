@@ -1,0 +1,22 @@
+spawn;
+
+caves section¿
+Hierro N := 28
+Hierro suma := 0
+Hierro i := 1
+Bronze esPerfecto := Vanilla
+?
+
+
+Mobs section¿
+piglin(i < N, i+=1, i+=1)¿
+    zombie N % i = 0;
+        esqueleto suma := suma + i ;
+?
+zombie suma = N;
+    esqueleto esPerfecto := Vanilla;
+enderman esPerfecto := modded;
+
+Tradeoff esPerfecto;
+?
+muerte

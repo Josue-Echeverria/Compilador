@@ -1,0 +1,20 @@
+spawn;
+Blocks section¿
+forjado Esmeralda lista := [1, 3, 4, 6, 8];
+?
+
+caves section¿
+Hierro i := 0;
+Hierro encontrado := 0;
+Hierro objetivo := 4;
+?
+
+Mobs section¿
+creeper i < contar lista ¿
+    zombie lista@i = objetivo;
+        esqueleto encontrado := 1 espada;
+    i+=1;
+?
+Tradeoff encontrado;
+?
+muerte;
