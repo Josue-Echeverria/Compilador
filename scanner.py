@@ -331,7 +331,7 @@ class Scanner:
 def ejemplo_uso():
     scanner = Scanner()
     
-    if scanner.inicializar_scanner("codigo_fuente.txt"):
+    if scanner.inicializar_scanner("pruebas/BusquedaLineal.txt"):
         print("Scanner inicializado correctamente.")
         
         # Procesamos todos los tokens
