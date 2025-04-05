@@ -20,7 +20,7 @@
 ;                                           ;
 ; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
-extrn stringtoint:Far, print:Far
+extrn stringtoint:Far, print:Far, inttostring:Far
 Assume CS:codigo, DS:datos
 
 
@@ -33,55 +33,17 @@ datos segment
 	mensajeEntradaDNA db 10,13,'Introduzca una cadena de DNA: $'
 	mensajeSalida db 10,13,'El valor en un entero es: $'
 
-	mensajeErrorOverflow db 10,13,'Error: Overflow en la conversion de string a entero $'
-	mensajeErrorNoInt db 10,13,'Error: No se introdujo un numero entero $'
+	char db ?
+	stringfiedCharInt db 3 dup (?),'$'
+
 	string db 6, 32 dup ('$')
 	integer dw 0
+			dw 0
 	stringfiedInt db 6 dup (?),'$' 
 	
 datos endS
 
 codigo segment
-
-; stringtoint macro 
-; 	xor bx, bx
-; 	xor cx, cx
-; 	mov bl, string[1] ; longitud de la cadena
-; 	inc bx
-; 	mov dx, 1
-; loopStringtoInt:
-; 	xor ax, ax
-; 	mov al, string[bx]
-; 	sub al, 30h
-; 	cmp al, 9
-; 	ja noIntError
-; 	push dx
-; 	mul dx
-; 	jo overflowError
-; 	add integer, ax
-; 	pop ax
-; 	mov dx, 10
-; 	mul dx
-; 	mov dx, ax
-; 	dec bx
-; 	cmp bx, 1
-; 	jne loopStringtoInt
-; endM
-
-
-inttostring macro 
-	mov cx, 10
-	mov bx, 5
-	mov ax, integer
-loopInttoString:
-	xor dx, dx
-	div cx
-	add dx, 0030h
-	mov stringfiedInt[bx], dl
-	dec bx
-	cmp ax, 0
-	jne loopInttoString
-endM
 
 
 inicio:
@@ -93,23 +55,74 @@ inicio:
 	mov ax, datos
 	mov ds, ax		
 
-	; Se imprime el mensaje para pedir un numero 
-	; push offset mensajeEntradaString
-	; call print
 
-	; ; se lee un numero entero
+	; --------------------------------------------
+	; CONVERTIR UN STRING A ENTERO
+	; --------------------------------------------
+
+	; Se imprime el mensaje para pedir string 
+	push offset mensajeEntradaString
+	call print
+
+	; se lee un string
 	mov dx, offset string
 	mov ah, 0ah
 	int 21h
 
-	; push offset integer
+	; Se pasa el string a entero
 	push offset string
 	call stringtoint
-
+	; el resultado de la conversion queda arriba en la pila
 	pop ax
 	mov integer, ax
+
+	; se convierte el numero entero a un string para mostrarlo
+    mov ax, integer
+	mov bx, offset stringfiedInt
+	add bx, 5 
+	call inttostring
+
+	; Se imprime el mensaje para mostrar el numero introducido
+	push offset mensajeSalida
+	call print
+
+	; Se imprime el numero entero pasado a string
+	push offset stringfiedInt
+	call print
+
 	; --------------------------------------------
-	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL STRING A ENTERO
+	; CONVERTIR UN CARACTER A ENTERO
+	; --------------------------------------------
+	
+	; Se imprime el mensaje para pedir un caracter
+	push offset mensajeEntradaChar
+	call print
+
+	; se lee un caracter
+	; el caracter ya se lee como un numero 
+	; por lo que no es necesario convertirlo a entero
+	xor ax, ax
+	mov ah, 01h
+	int 21h
+	mov char, al
+
+	; se convierte el numero entero a un string para mostrarlo
+	xor ax, ax
+    mov al, char
+	mov bx, offset stringfiedCharInt
+	add bx, 2
+	call inttostring
+
+	; Se imprime el mensaje para mostrar el numero introducido
+	push offset mensajeSalida
+	call print
+
+	; Se imprime el numero entero pasado a string
+	push offset stringfiedCharInt
+	call print
+	
+	; --------------------------------------------
+	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR booleano A ENTERO
 	; --------------------------------------------
 
 	; Se imprime el mensaje para pedir un caracter
@@ -122,57 +135,18 @@ inicio:
 	; mov ah, 0ah
 	; int 21h
 
-	; --------------------------------------------
-	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL CARACTER A ENTERO
-	; --------------------------------------------
-	
-	; Se imprime el mensaje para pedir un nombre de archivo
-	; mov dx, offset mensajeEntradaArchivo
-	; mov ah, 9
-	; int 21h
-
-	; se lee un nombre de archivo
-	;mov dx, offset string
-	;mov ah, 0ah
-	;int 21h
 
 	; --------------------------------------------
 	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL ARCHIVO A ENTERO
 	; --------------------------------------------
 
 
+	; --------------------------------------------
+	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL DNA A ENTERO
+	; --------------------------------------------
 
 
-
-
-
-
-	; se convierte el string a un numero entero
-
-
-	; se convierte el numero entero a un string
-	inttostring
 	
-	; Se imprime el mensaje para mostrar el numero introducido
-	push offset mensajeSalida
-	call print
-
-	; Se imprime el numero entero pasado a string
-	push offset stringfiedInt
-	call print
-	jmp fin
-	
-overflowError:
-	mov dx, offset mensajeErrorOverflow 
-	mov ah, 9
-	int 21h
-	jmp fin
-
-noIntError:
-	mov dx, offset mensajeErrorNoInt
-	mov ah, 9
-	int 21h
-	jmp fin
 fin:
     ; Interrupcion para terminar la ejecucion del programa
 	mov ax, 4c00h 
