@@ -20,16 +20,16 @@
 ;                                           ;
 ; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
-extrn stringtoint:Far, print:Far, inttostring:Far
+extrn stringtoint:Far, print:Far, inttostring:Far, booltoint:Far, archivotoint:Far
 Assume CS:codigo, DS:datos
 
 
 datos segment
 
-	mensajeEntradaString db 10,13,'Introduce un numero entero [65535,0] : $'
+	mensajeEntradaString db 10,13,'Introduce un string [65535,0] : $'
 	mensajeEntradaChar db 10,13,'Introduce un caracter: $'
-	mensajeEntradaArchivo db 10,13,'Introduce el nombre del archivo: $'
 	mensajeEntradaBoolean db 10,13,'Introduzca un valor booleano: $'
+	mensajeEntradaArchivo db 10,13,'Introduce el nombre del archivo: $'
 	mensajeEntradaDNA db 10,13,'Introduzca una cadena de DNA: $'
 	mensajeSalida db 10,13,'El valor en un entero es: $'
 
@@ -41,6 +41,15 @@ datos segment
 			dw 0
 	stringfiedInt db 6 dup (?),'$' 
 	
+	bool db ?
+	false db 10, 13, 'false$'
+	true db 10, 13, 'true$'
+
+	archivo db 30 dup('$')  
+    integerArchivo dw 0
+	stringfiedintegerArchivo db 6 dup (?),'$' 
+
+
 datos endS
 
 codigo segment
@@ -54,7 +63,6 @@ inicio:
 	; Se cargan los datos definidos en datos Segment
 	mov ax, datos
 	mov ds, ax		
-
 
 	; --------------------------------------------
 	; CONVERTIR UN STRING A ENTERO
@@ -122,24 +130,62 @@ inicio:
 	call print
 	
 	; --------------------------------------------
-	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR booleano A ENTERO
+	; CONVERTIR UN BOOLEANO A ENTERO
 	; --------------------------------------------
 
 	; Se imprime el mensaje para pedir un caracter
-	; mov dx, offset mensajeEntradaChar
-	; mov ah, 9
-	; int 21h
+	push offset mensajeEntradaBoolean
+	call print
 
-	; se lee un caracter
-	; mov dx, offset string
-	; mov ah, 0ah
-	; int 21h
+	; se lee un valor booleano
+	xor ax, ax
+	mov ah, 01h
+	int 21h
+	mov bool, al
 
+	; Se pasa el string a entero
+	push offset bool
+	call booltoint
+	
+	cmp al, 1
+	jne printfalse
+	push offset true
+	call print
+	jmp fin
+	printfalse:
+	push offset false
+	call print
 
 	; --------------------------------------------
 	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL ARCHIVO A ENTERO
 	; --------------------------------------------
 
+
+    ; Solicitar nombre del archivo
+    push offset mensajeEntradaArchivo
+    call print
+
+
+    ; Leer el nombre del archivo desde el usuario
+    mov dx, offset archivo
+    mov ah, 0Ah
+    int 21h
+
+	push offset archivo
+	call archivotoint ; El entero queda en el ax
+	mov integerArchivo, ax
+
+	push offset mensajeSalida
+	call print
+
+	; se convierte el numero entero a un string para mostrarlo
+    mov ax, integerArchivo
+	mov bx, offset stringfiedintegerArchivo
+	add bx, 5 
+	call inttostring
+
+	push offset stringfiedintegerArchivo
+	call print
 
 	; --------------------------------------------
 	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL DNA A ENTERO
