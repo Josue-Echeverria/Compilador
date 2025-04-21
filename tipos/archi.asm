@@ -18,14 +18,33 @@
 ;                                           ;
 ; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
+extrn print:Far, addUpString:Far, inttostring:Far, stringtoint:Far, booltoint:Far
 datos Segment
-    mensaje1 db "Ingrese el nombre del archivo: $"
-    mensaje2 db 10,13, "Contenido del archivo: $"
-    mensajeError db "Ocurrio un error al procesar el archivo...$"
-    archivo db 30 dup('$')   ; Primer byte: Tamaño máximo, segundo: Longitud actual
-    archivoNombre db 30 dup(?)  ; Nombre real del archivo
-    handle dw ?
-    bufferLectura db 255 dup('$')  ; Buffer de lectura
+    mensajeEntradaEntero db 10,13,'Introduzca un valor entero: $'
+	mensajeEntradaBool db 10,13,'Introduzca un valor booleano (1 | 0): $'
+	mensajeEntradaString db 10,13,'Introduce un string: $'
+	mensajeEntradaChar db 10,13,'Introduce un caracter: $'
+	mensajeEntradaDNA db 10,13,'Introduzca una cadena de DNA: $'
+	mensajeSalida db 10,13,'El valor en un archivo se encuentra en : $'
+	endOfFileName db ".txt", 0
+
+    string db 32, 32 dup (?)
+    archivoNombreString db "s-", 5 dup ('0') 
+                        db ".txt", 0, '$'  
+    idNombreArchivo dw ?  ; Nombre del archivo
+    
+    integer dw 0
+    stringInt db 6, 6 dup (?),'$'
+    archivoNombreInteger db "i-", 5 dup ('0') 
+                        db ".txt", 0, '$'
+
+    char db ?
+    archivoNombreChar db "c-", 5 dup ('0') 
+                        db ".txt", 0, '$'
+
+    bool db ?
+    archivoNombreBool db "b-", 5 dup ('0') 
+                        db ".txt", 0, '$'
 datos EndS
 
 
@@ -33,77 +52,190 @@ datos EndS
 
 
 codigo Segment
-    assume cs:codigo, ds:datos
+    assume cs:codigo, ds:datos    
 
 Inicio:
-    xor ax, ax
     mov ax, datos
     mov ds, ax
 
+;---------------------------------------
+; STRING -> ARCHIVO 
+;---------------------------------------
+
     ; Solicitar nombre del archivo
-    mov dx, offset mensaje1
-    mov ah, 9
+    push offset mensajeEntradaString
+    call print
+
+    ; se lee un string de la entrada estandar
+	mov dx, offset string
+	mov ah, 0ah
+	int 21h
+
+    push offset idNombreArchivo
+    push offset string
+    call addUpString
+
+    mov ax, idNombreArchivo
+    mov bx, offset archivoNombreString
+    add bx, 6
+    call inttostring
+
+    mov ah, 03ch 			
+	xor cx,cx        ; Con cx = 0 se crea un archivo de texto             
+	mov dx, offset archivoNombreString  	
+	int 21h	
+
+    mov bx, ax
+    mov ah, 40h
+    mov dx, offset string
+    add dx, 2
+    mov cl, [string+1]  ; Longitud del string
     int 21h
 
-    ; Leer el nombre del archivo desde el usuario
-    mov dx, offset archivo
-    mov ah, 0Ah
+    mov ah, 3eh
     int 21h
 
-    ; Ajustar el nombre del archivo con terminador nulo
+    push offset mensajeSalida
+    call print
+
+    push offset archivoNombreString
+    call print
+
+
+;---------------------------------------
+; INT -> ARCHIVO 
+;---------------------------------------
+
+    
+    ; Solicitar nombre del archivo
+    push offset mensajeEntradaEntero
+    call print
+
+    ; se lee un string de la entrada estandar
+    mov dx, offset stringInt
+    mov ah, 0ah
+    int 21h
+
+    push offset stringInt
+    call stringtoint
+	pop ax
+	mov integer, ax
+
+    mov ax, integer
+    mov bx, offset archivoNombreInteger
+    add bx, 6
+    call inttostring
+
+    mov ah, 03ch 			
+    xor cx,cx        ; Con cx = 0 se crea un archivo de texto             
+    mov dx, offset archivoNombreInteger  	
+    int 21h	
+
+    mov bx, ax
+    mov ah, 40h
+    mov dx, offset stringInt
+    add dx, 2
+    mov cl, [stringInt+1]  ; Longitud del string
+    int 21h
+
+    mov ah, 3eh
+    int 21h
+
+    push offset mensajeSalida
+    call print
+
+    push offset archivoNombreInteger
+    call print
+
+
+
+;---------------------------------------
+; CHAR -> ARCHIVO 
+;---------------------------------------
+
+    push offset mensajeEntradaChar
+    call print
+
+	xor ax, ax
+	mov ah, 01h
+	int 21h
+	mov char, al
+
     xor ax, ax
-    xor cx, cx           ; Limpiar CX
-    xor bx, bx           ; Limpiar BX
-    mov cl, [archivo+1]  ; Obtener longitud ingresada (8 bits)
-loopStrinptofile:
-    mov al, archivo[bx+2]                ; Leer byte de nombre
-    mov archivoNombre[bx], al  ; Copiar byte a archivoNombre
-    inc bx
-    loop loopStrinptofile
-   
+    mov al, char
+    mov bx, offset archivoNombreChar
+    add bx, 6
+    call inttostring
 
-    ; Abrir el archivo en modo lectura
-    mov ah, 3Dh
-    lea dx, archivoNombre  ; Dirección real del nombre
-    xor al, al  ; Modo lectura
-    int 21h
-    jc Error  ; Si falla, mostrar mensaje de error
-
-    mov handle, ax  ; Guardar el manejador del archivo
-
-    ; Leer contenido del archivo
-    mov ah, 3Fh
-    mov bx, handle
-    lea dx, bufferLectura
-    mov cx, 255  ; Leer hasta 255 caracteres
-    int 21h
-    jc Error
-
-    ; Agregar terminador de cadena al buffer leído
-    mov si, ax  ; Número de bytes leídos
-    mov byte ptr [bufferLectura+si], '$'
-
-    ; Mostrar mensaje de contenido del archivo
-    mov dx, offset mensaje2
-    mov ah, 9
+    mov ah, 03ch
+    xor cx,cx        ; Con cx = 0 se crea un archivo de texto
+    mov dx, offset archivoNombreChar
     int 21h
 
-    ; Imprimir el contenido del archivo
-    mov dx, offset bufferLectura
-    mov ah, 9
+    mov bx, ax
+    mov ah, 40h
+    mov dx, offset char
+    mov cl, 1
     int 21h
 
-    ; Cerrar el archivo
-    mov ah, 3Eh
-    mov bx, handle
+    xor ax, ax
+    mov ah, 3eh
     int 21h
-    jnc salida
-    jmp short Error
 
-Error:
-    mov ah, 9
-    lea dx, mensajeError
+    push offset mensajeSalida
+    call print
+
+    push offset archivoNombreChar
+    call print
+
+
+;---------------------------------------
+; BOOL -> ARCHIVO 
+;---------------------------------------
+
+
+    xor ax, ax
+    mov ah, 2ch
     int 21h
+
+    mov ax, dx
+    mov bx, offset archivoNombreBool
+    add bx, 6
+    call inttostring
+
+    push offset mensajeEntradaBool
+    call print
+
+    xor ax, ax
+	mov ah, 01h
+	int 21h
+	mov bool, al
+
+	push offset bool
+	call booltoint
+
+
+    mov ah, 03ch
+    xor cx,cx        ; Con cx = 0 se crea un archivo de texto
+    mov dx, offset archivoNombreBool
+    int 21h
+
+    mov bx, ax
+    mov ah, 40h
+    mov dx, offset bool
+    mov cl, 1
+    int 21h
+
+    xor ax, ax
+    mov ah, 3eh
+    int 21h
+
+    push offset mensajeSalida
+    call print
+
+    push offset archivoNombreBool
+    call print
+
 
 salida:
     mov ax, 4c00h

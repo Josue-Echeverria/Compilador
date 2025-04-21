@@ -87,7 +87,7 @@ inicio:
 	; se convierte el numero entero a un string para mostrarlo
     mov ax, integer
 	mov bx, offset stringfiedInt
-	add bx, 5 
+	add bx, 5 ; Se le suma 5 para que empieze a leer el entero de derecha a izquierda
 	call inttostring
 
 	; Se imprime el mensaje para mostrar el numero introducido
@@ -143,7 +143,6 @@ inicio:
 	int 21h
 	mov bool, al
 
-	; Se pasa el string a entero
 	push offset bool
 	call booltoint
 	
@@ -151,13 +150,13 @@ inicio:
 	jne printfalse
 	push offset true
 	call print
-	jmp fin
+	jmp aux
 	printfalse:
 	push offset false
 	call print
-
+	aux:
 	; --------------------------------------------
-	; AQUI DEBERIA DE IR EL CODIGO PARA CONVERTIR EL ARCHIVO A ENTERO
+	; CODIGO PARA CONVERTIR EL ARCHIVO A ENTERO
 	; --------------------------------------------
 
 

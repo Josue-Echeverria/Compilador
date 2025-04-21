@@ -24,13 +24,17 @@ datos Segment
     mensajeErrorArchivo db 10,13,'Error: No se introdujo un nombre de archivo existente en el directorio$'
     mensajeErrorArchivoNoInt db 10,13,'Error: No existe un valor numerico en el archivo$'
     mensajeErrorArchivoOrverflow db 10,13,'Error: Overflow en la conversion del archivo a entero$'
+	mensajeErrorNoBoolean db 10,13,'Error: No se introdujo un booleano $'
+
+    true db '1 (vedadero)$'
+    false db '0 (falso)$'
     integer dw 0
     bufferLectura db 255 dup('$')  ; Donde queda guardado el contenido del archivo
     archivoInteger dw 0
 datos Ends
 
 procedimientos Segment
-    public stringtoint, inttostring, print, booltoint, archivotoint
+    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString
     assume cs:procedimientos, ds:datos
 
     print proc far ; input : push offset string 
@@ -84,7 +88,7 @@ procedimientos Segment
         mov cx, 10
     loopInttoString:
         xor dx, dx
-        div cx
+        div cx          ; Cada vez que se divide el entero por 10, se obtiene el residuo en dx
         add dx, 0030h
         mov [bx], dl
         dec bx
@@ -178,8 +182,116 @@ procedimientos Segment
     
     endp
 
+    stringtoboolean proc far 
+    ; "" = false
+    ; "0" = false
+    ; "literally any other string" = true
 
+        mov bp, sp     
+        mov bx, [bp+4]          ; bx = dir de la string
+        xor ax, ax
+        mov al, byte ptr [bx+1]   ; al = length of string
+        cmp al, 0               ; al ? 0
+        ja noEmptyString
+        mov bx, [bp+6]
+        mov byte ptr [bx], 0
+                                ; Y en la posicion 33 se guardara si es verdadero (1) o falso (0)
+        jmp finStringtoBoolean
+    noEmptyString:
+        mov al, byte ptr [bx+2] ; al = first character of string
+        cmp al, 30h             ; al ? '0'
+        ja normalString
+        mov bx, [bp+6]
+        mov byte ptr [bx], 0
+        jmp finStringtoBoolean
+    normalString:
+        mov bx, [bp+6]
+        mov byte ptr [bx], 1
+    finStringtoBoolean:
+        retf 4
+    endp
 
+    inttobool proc far 
+    ; 1 = true
+    ; 65535 = true
+    ; 0 = false
+    ; (Cualquier numero diferente de 0 es true)
+        mov bp, sp     
+        mov bx, [bp+4]          ; bx = dir del valor booleano
+        mov ax, [bx]   
+        cmp ax, 1
+        jae esVerdaderoInttoBool
+        mov bx, [bp+6] 
+        mov byte ptr [bx], 0
+        jmp finInttoBool
+    esVerdaderoInttoBool:
+        mov bx, [bp+6] 
+        mov byte ptr [bx], 1
+    finInttoBool:
+        retf 2
+    endp
+
+    printBool proc far  
+        mov bp, sp     
+        mov bx, [bp+4]          ; bx = dir del valor booleano
+        mov al, byte ptr [bx]   ; al = 1 | 0 
+        cmp al, 1
+        je esVerdadero
+        mov dx, offset false
+        jmp imprimir
+    esVerdadero:
+        mov dx, offset true
+    imprimir:
+        push ds   
+        mov ax, datos
+        mov ds, ax
+        mov ah, 9
+        int 21h
+        pop ds
+        retf 2
+    endp
+
+	chartobool proc far
+        mov bp, sp     
+        xor ax, ax
+        mov bx, [bp+4]          ; bx = dir del valor booleano
+        mov al, byte ptr [bx]   ; al = length of string
+        cmp ax, 30h
+        ja esVerdaderoChartoBool
+        mov bx, [bp+6] 
+        mov byte ptr [bx], 0
+        jmp finChartoBool
+    esVerdaderoChartoBool:
+        mov bx, [bp+6] 
+        mov byte ptr [bx], 1
+    finChartoBool:
+        retf 4
+	endp
+
+    archivotobool proc far
+        mov bp, sp     
+        mov bx, [bp+4]  ; bx = dir de la string
+        add bl, byte ptr [bx+1]  ; longitud de string
+        add bx, 2
+        mov [bx], byte ptr 0
+
+        ; Abrir el archivo en modo lectura
+        mov ah, 3Dh
+        mov dx, [bp+4]  ; Dirección real del archivo
+        add dx, 2       ; Para saltar el tamaño del string 
+        mov bx, [bp+6]  ; modo de apertura
+        mov al, byte ptr [bx]
+        int 21h
+        jnc trueArchivo         ; SI no falla el archivo se abrio y por lo tanto es verdadero
+        mov bx, [bp+8]
+        mov byte ptr [bx], 0
+        jmp finArchivotoBool
+    trueArchivo:
+        mov bx, [bp+8]
+        mov byte ptr [bx], 1
+    finArchivotoBool:
+        retf 6
+    endp
 
     handleError proc near
         mov ax, datos
@@ -235,6 +347,24 @@ procedimientos Segment
         finError:
         mov ax, 4c00h 
         int 21h
+    endp
+
+    addUpString proc far
+        ; Proc para sumar los primeros 5 valores de un string
+        ; Este proc es para generar el nombre del archivo en caso de conversion string -> archivo 
+        mov bp, sp
+        mov bx, [bp+4]  
+        mov cl, 5
+        xor dx, dx
+    addUpStringLoop:
+        xor ax, ax
+        mov al, byte ptr [bx+2] ; al = primer caracter del string
+        add dx, ax
+        inc bx
+        loop addUpStringLoop
+        mov bx, [bp+6] 
+        mov [bx], dx 
+        retf 4
     endp
 
 
