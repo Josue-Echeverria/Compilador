@@ -1,13 +1,10 @@
 ;-------------------------------------------;
-; Almacenamiento de un caracter             ;
-;-------------------------------------------;
+; CONVERSION DE TIPOS A CHAR                ;
 ;                                           ;
-; Creado por: Quiros Harlen                 ;
+; Creado por: Quirós Harlen                 ;
 ;                                           ;
-; Descripcion:                              ;
-; Este programa pide un caracter, lo guarda ;
-; y luego lo muestra en la salida estandar. ;        ;
-;                                           ;
+; Descripcion: convierte booleano, entero,  ;
+; string (promedio) a char y los muestra.   ;
 ;-------------------------------------------;
 ;                                           ;
 ; Forma de compilacion:                     ;
@@ -17,45 +14,104 @@
 ;                                           ;
 ; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
+
+extrn stringtoint:Far, stringtoboolean:Far, print:Far
+Assume CS:codigo, DS:datos
+
 datos segment
+	mensajeEntradaBooleano db 10,13,'Introduzca un booleano (0/1): $'
+	mensajeEntradaEntero db 10,13,'Introduzca un valor entero: $'
+	mensajeEntradaString db 10,13,'Introduzca un string: $'
+	mensajeSalidaChar db 10,13,'El caracter resultante es: $'
 
-    mensaje0 db 10,13,'Introduzca un caracter: $'
-    mensaje1 db 10,13,'El caracter introducido es: $'
-    caracter db ?
-
+	stringInt db 6, 7 dup(?)
+	integer dw ?
+	boolValue db ?
+	stringBuffer db 32, 32 dup(?)
+	character db ?
 datos ends
 
 codigo segment
-    assume cs:codigo, ds:datos
-
 inicio:
-    ; Cargar el segmento de datos
-    mov ax, datos
-    mov ds, ax
+	mov ax, datos
+	mov ds, ax
 
-    ; Se muestra el mensaje de solicitud de caracter
-    mov dx, offset mensaje0
-    mov ah, 9
-    int 21h
+	;---------------------------------------
+	; BOOLEANO -> CHAR
+	;---------------------------------------
+	push offset mensajeEntradaBooleano
+	call print
+	mov ah, 01h
+	int 21h
+	sub al, 30h
+	mov boolValue, al
 
-    ; Se lee un caracter desde la entrada estándar
-    mov ah, 1
-    int 21h
-    mov caracter, al  ; Guardar el caracter ingresado
+	; Convertir booleano a char ('0' o '1')
+	mov al, boolValue
+	add al, 30h
+	mov character, al
 
-    ; Se imprime el mensaje de caracter ingresado
-    mov dx, offset mensaje1
-    mov ah, 9
-    int 21h
+	push offset mensajeSalidaChar
+	call print
+	mov dl, character
+	mov ah, 02h
+	int 21h
 
-    ; Imprime el caracter ingresado
-    mov dl, caracter
-    mov ah, 2
-    int 21h
+	;---------------------------------------
+	; ENTERO -> CHAR
+	;---------------------------------------
+	push offset mensajeEntradaEntero
+	call print
+	mov dx, offset stringInt
+	mov ah, 0ah
+	int 21h
 
-    ; Termina el programa
-    mov ax, 4c00h
-    int 21h
+	push offset stringInt
+	call stringtoint
+	pop ax
+	mov integer, ax
 
+	mov al, byte ptr integer
+	mov character, al
+
+	push offset mensajeSalidaChar
+	call print
+	mov dl, character
+	mov ah, 02h
+	int 21h
+
+	;---------------------------------------
+	; STRING -> CHAR (promedio truncado)
+	;---------------------------------------
+	push offset mensajeEntradaString
+	call print
+	mov dx, offset stringBuffer
+	mov ah, 0ah
+	int 21h
+
+	; Calcular promedio de ASCII
+	mov si, offset stringBuffer+2
+	mov cl, [stringBuffer+1]
+	xor ax, ax
+	xor bx, bx
+sumarAscii:
+	mov dl, [si]
+	add ax, dx
+	inc si
+	inc bx
+	loop sumarAscii
+	xor dx, dx
+	div bx
+	mov character, al
+
+	push offset mensajeSalidaChar
+	call print
+	mov dl, character
+	mov ah, 02h
+	int 21h
+
+	; FIN
+	mov ax, 4c00h
+	int 21h
 codigo ends
 end inicio
