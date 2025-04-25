@@ -12,7 +12,7 @@
 ; Forma de compilacion:                     ;
 ; Usando el turbo assembler.                ;
 ;    tasm /zi /l lib                        ;
-;    tlink /v <nombre del archivo> lib                           ;
+;    tlink /v <nombre del archivo> lib      ;
 ;                                           ;
 ; Fecha de creacion: Abril 05, 2025.        ;
 ;-------------------------------------------;
