@@ -34,7 +34,7 @@ datos Segment
 datos Ends
 
 procedimientos Segment
-    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString
+    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString, archivotochar,archivotostring
     assume cs:procedimientos, ds:datos
 
     print proc far ; input : push offset string 
@@ -366,6 +366,59 @@ procedimientos Segment
         mov [bx], dx 
         retf 4
     endp
+
+    archivotochar proc far
+        mov bp, sp     
+        mov bx, [bp+4]  ; bx = dir de la string
+        add bl, byte ptr [bx+1]  ; longitud de string
+        add bx, 2
+        mov [bx], byte ptr 0
+; Abrir el archivo en modo lectura
+        mov ah, 3Dh
+        mov dx, [bp+4]  ; Dirección real del archivo
+        add dx, 2       ; Para saltar el tamaño del string 
+        mov al, 0
+        int 21h
+        jnc archivotocharNoError         
+        mov bx, 4
+        call handleError
+        jmp finArchivotochar
+    archivotocharNoError:
+        mov bx, ax
+        mov ah, 3Fh
+        mov dx, [bp+6] ; dx = dir del caracter
+        mov cx, 1
+        int 21h
+    finArchivotochar:
+        retf 4
+    endp
+
+    archivotostring proc far
+        mov bp, sp     
+        mov bx, [bp+4]  ; bx = dir de la string
+        add bl, byte ptr [bx+1]  ; longitud de string
+        add bx, 2
+        mov [bx], byte ptr 0
+; Abrir el archivo en modo lectura
+        mov ah, 3Dh
+        mov dx, [bp+4]  ; Dirección real del archivo
+        add dx, 2       ; Para saltar el tamaño del string 
+        mov al, 0
+        int 21h
+        jnc archivotostringNoError         
+        mov bx, 4
+        call handleError
+        jmp finArchivotostring
+    archivotostringNoError:
+        mov bx, ax
+        mov ah, 3Fh
+        mov dx, [bp+6] ; dx = dir del caracter
+        mov cx, 255
+        int 21h
+    finArchivotostring:
+        retf 4
+    endp
+
 
 
 procedimientos Ends
