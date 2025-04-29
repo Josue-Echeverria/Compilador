@@ -15,7 +15,7 @@
 ; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
 
-extrn stringtoint:Far, print:Far
+extrn stringtoint:Far, stringtoboolean:Far, print:Far, archivotochar:Far
 Assume CS:codigo, DS:datos
 
 datos segment
@@ -30,7 +30,7 @@ datos segment
 	boolValue db ?
 	stringBuffer db 32, 32 dup(?)
 	nombreArchivo db 32, 33 dup(?)
-	caracter db ?
+	character db ?
 datos ends
 
 codigo segment
@@ -38,37 +38,60 @@ inicio:
 	mov ax, datos
 	mov ds, ax
 
-; BOOLEANO -> CHAR
+	;---------------------------------------
+	; BOOLEANO -> CHAR
+	;---------------------------------------
 	push offset mensajeEntradaBooleano
 	call print
 	mov ah, 01h
 	int 21h
 	sub al, 30h
 	mov boolValue, al
-	add al, 30h
-	mov caracter, al
-	call imprimir_char
 
-; ENTERO -> CHAR
+	; Convertir booleano a char ('0' o '1')
+	mov al, boolValue
+	add al, 30h
+	mov character, al
+
+	push offset mensajeSalidaChar
+	call print
+	mov dl, character
+	mov ah, 02h
+	int 21h
+
+	;---------------------------------------
+	; ENTERO -> CHAR
+	;---------------------------------------
 	push offset mensajeEntradaEntero
 	call print
 	mov dx, offset stringInt
 	mov ah, 0ah
 	int 21h
+
 	push offset stringInt
 	call stringtoint
 	pop ax
 	mov integer, ax
-	mov al, byte ptr integer
-	mov caracter, al
-	call imprimir_char
 
-; STRING -> CHAR (promedio truncado)
+	mov al, byte ptr integer
+	mov character, al
+
+	push offset mensajeSalidaChar
+	call print
+	mov dl, character
+	mov ah, 02h
+	int 21h
+
+	;---------------------------------------
+	; STRING -> CHAR (promedio truncado)
+	;---------------------------------------
 	push offset mensajeEntradaString
 	call print
 	mov dx, offset stringBuffer
 	mov ah, 0ah
 	int 21h
+
+	; Calcular promedio de ASCII
 	mov si, offset stringBuffer+2
 	mov cl, [stringBuffer+1]
 	xor ax, ax
@@ -81,44 +104,36 @@ sumarAscii:
 	loop sumarAscii
 	xor dx, dx
 	div bx
-	mov caracter, al
-	call imprimir_char
+	mov character, al
 
-; ARCHIVO -> CHAR (primer letra)
+	push offset mensajeSalidaChar
+	call print
+	mov dl, character
+	mov ah, 02h
+	int 21h
+
+	;---------------------------------------
+	; ARCHIVO -> CHAR (primer letra)
+	;---------------------------------------
 	push offset mensajeEntradaArchivo
 	call print
+
 	mov dx, offset nombreArchivo
 	mov ah, 0ah
 	int 21h
-	mov ah, 3Dh
-	lea dx, nombreArchivo+2
-	xor al, al
-	int 21h
-	jc error
-	mov bx, ax
-	mov ah, 3Fh
-	lea dx, caracter
-	mov cx, 1
-	int 21h
-	mov ah, 3Eh
-	int 21h
-	call imprimir_char
 
-; FIN
-	mov ax, 4c00h
-	int 21h
+	push offset character
+	push offset nombreArchivo
+	call archivotochar
 
-imprimir_char:
 	push offset mensajeSalidaChar
 	call print
-	mov dl, caracter
+	mov dl, character
 	mov ah, 02h
 	int 21h
-	ret
 
-error:
+	; FIN
 	mov ax, 4c00h
 	int 21h
 codigo ends
 end inicio
-

@@ -16,7 +16,8 @@
 ; Forma de compilacion:                     ;
 ; Usando el turbo assembler.                ;
 ;    tasm /zi /l int                        ;
-;    tlink /v int                           ;
+;    tasm /zi /l lib                        ;
+;    tlink /v int lib                       ;
 ;                                           ;
 ; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
