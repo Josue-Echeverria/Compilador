@@ -82,8 +82,7 @@ class Scanner:
                 self.columna_actual = 0
 
     def deme_token(self):
-        delimitadores = ['(', ')', '{', '}', ':', ';', ',', '.', '[', ']']
-        # Ignorar espacios
+        # Ignorar espacios en blanco
         while True:
             caracter = self.deme_caracter()
             if not caracter or caracter not in [' ', '\t', '\n', '\r']:
@@ -92,22 +91,33 @@ class Scanner:
             self.token_actual = {'tipo': self.TIPOS_TOKEN['FIN_ARCHIVO'], 'lexema': '', 'linea': self.linea_actual, 'columna': self.columna_actual}
             return self.token_actual
 
+        # Detectar delimitadores inmediatamente
+        delimitadores = ['(', ')', '{', '}', ':', ';', ',', '.', '[', ']']
+        if caracter in delimitadores:
+            self.token_actual = {
+                'tipo': self.TIPOS_TOKEN['DELIMITADOR'],
+                'lexema': caracter,
+                'linea': self.linea_actual,
+                'columna': self.columna_actual - 1
+            }
+            return self.token_actual
+
         lexema = ''
         estado_actual = 'q0'
         linea_inicio = self.linea_actual
         columna_inicio = self.columna_actual - 1
 
-        # Comentarios
+        # Manejo de comentarios
         if caracter == '$':
             siguiente = self.deme_caracter()
             if siguiente == '$':  # Comentario de línea
                 contenido = ''
                 caracter = self.deme_caracter()
                 while caracter and caracter != '\n':
-                    if caracter != '$':  # Ignora los signos de dólar
+                    if caracter != '$':
                         contenido += caracter
                     caracter = self.deme_caracter()
-                lexema = '$$' + contenido  # Solo los delimitadores mantienen $
+                lexema = '$$' + contenido
                 self.token_actual = {'tipo': self.TIPOS_TOKEN['COMENTARIO'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio}
                 return self.token_actual
 
@@ -142,7 +152,7 @@ class Scanner:
                 self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': '$', 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Carácter no reconocido'}
                 return self.token_actual
 
-        # Procesar token con matriz
+        # Procesar token normal usando matriz
         if caracter not in self.matriz.index or 'q0' not in self.matriz.columns:
             self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': caracter, 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Carácter no reconocido en q0'}
             return self.token_actual
@@ -154,7 +164,6 @@ class Scanner:
 
         lexema += caracter
 
-        # Recorrido del lexema completo
         while True:
             caracter = self.deme_caracter()
             if not caracter:
@@ -177,12 +186,9 @@ class Scanner:
                         estado_actual = estado_destino
                         continue
             if estado_actual == 'q9999':
-                if caracter in [':', ';', ',', '(', ')', '{', '}', '[', ']']:
-                    self.tome_caracter()
-                    break
                 lexema += caracter
 
-        # Validar estado final al terminar
+        # Validar final
         if estado_actual == 'q9999':
             self.token_actual = {'tipo': self.TIPOS_TOKEN['IDENTIFICADOR'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio}
         else:
@@ -193,6 +199,7 @@ class Scanner:
             else:
                 self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Estado no final'}
         return self.token_actual
+
     def tome_token(self):
         if not self.token_actual:
             self.deme_token()

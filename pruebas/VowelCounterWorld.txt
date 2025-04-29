@@ -1,33 +1,43 @@
 WorldName VowelCounterWorld: $$ Entrada del programa
 
-CraftingTable $$ Constant Section
+Bedrock $$ Constant Section
+
+CraftingTable $$ Routine Section
 
 Spell countVocal(Spider :: palabra) -> Stack $$ Definición de la función: Integer
-PolloAsado <- 0
-$$ fin_index;
-$$ longitudString;
+PolloCrudo
 
-fin_index = #palabra; $$ Longitud String: Integer
+    Stack index = 0; $$ Integer: índice de la palabra
+    Stack fin_index; $$ Integer: longitud de la palabra
+    Stack conteo = 0; $$ Integer: conteo de vocales
 
-repeater = fin_index craft PolloCrudo $$ While loop: repeater...craft
-Spider charAtIndex;
+fin_index = #palabra; $$ Longitud String: # for length
 
-PolloCrudo = 0;
-while repeater < fin_index craft PolloCrudo $$ Acceso de String : String[index]
-charAtIndex = upper charAtIndex = lower Spider[repeater];
+repeater index < fin_index craft PolloCrudo $$ While loop: repeater...craft
+    Spider charAtIndex;
 
-if (charAtIndex == a || charAtIndex == e || charAtIndex == i ||
-    charAtIndex == o || charAtIndex == u) {
-        PolloAsado++;
-}
-repeater++;
-$$ Incremento de contador
+    charAtIndex = palabra[index]; $$ Acceso de String : string[index]
+    charAtIndex = upper charAtIndex ; $$ Operación de carácter: upper
 
-PolloAsado is index soundSand; $$ Incremento de índice
-return PolloAsado;
-$$ Return: respuesta
+    jukebox charAtIndex craft , $$ Switch: jukebox...craft
+        disc "A" : conteo = conteo soulsand, $$ Incremento de conteo
+        disc "E" : conteo = conteo soulsand,
+        disc "I" : conteo = conteo soulsand,
+        disc "O" : conteo = conteo soulsand,
+        disc "U" : conteo = conteo soulsand,
+        silence; $$ Default: silence (no action)
+    $$ End jukebox
+
+    index = index soulsand; $$ Incremento de index
+PolloAsado $$ End repeater
+
+respawn conteo ; $$ Return: respawn
+PolloAsado $$ End Spell
 
 Ritual main() $$ Procedure: Ritual
-PolloCrudo <- 0;
-Spider palabra <- hopperSpider(); 
-palabra - hopperSpider(); $$ Input: hopperSpider() (ingresa la palabra)
+PolloCrudo
+
+    Spider palabra; $$ String: entrada de la palabra
+    Stack total; $$ Integer: resultado del conteo de vocales
+
+palabra = hopperSpider(); $$ Input: hopperSpider() (ingresa la palabra)
