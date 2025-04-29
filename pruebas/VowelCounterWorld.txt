@@ -40,4 +40,4 @@ PolloCrudo
     Spider palabra; $$ String: entrada de la palabra
     Stack total; $$ Integer: resultado del conteo de vocales
 
-palabra = hopperSpider(); $$ Input: hopperSpider() (ingresa la palabra)
+palabra = hopper Spider; $$ Input: hopper Spider() (ingresa la palabra)

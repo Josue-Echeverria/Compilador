@@ -28,6 +28,8 @@ body { font-family: Arial; background: #f4f4f4; padding: 20px; }
 .operador_string { background-color: #00cec9; }
 .operador_archivo { background-color: #636e72; }
 .comparador { background-color: #ffeaa7; color: #2d3436; }
+.entrada_estandar { background-color: #74b9ff; }
+.salida_estandar { background-color: #a29bfe; }
 .estadisticas { margin-top: 30px; background: white; padding: 15px; border-radius: 8px; }
 </style>
 </head>
@@ -36,37 +38,38 @@ body { font-family: Arial; background: #f4f4f4; padding: 20px; }
 <div class="muro">
 <div class="token estructura_programa">WorldName</div>
 <div class="token identificador">VowelCounterWorld</div>
-<div class="token delimitador">:</div>
-<div class="token identificador">Bedrock</div>
+<div class="token separador">:</div>
+<div class="token estructura_programa">Bedrock</div>
 <div class="token estructura_programa">CraftingTable</div>
 <div class="token estructura_programa">Spell</div>
 <div class="token identificador">countVocal</div>
 <div class="token delimitador">(</div>
 <div class="token tipo_dato">Spider</div>
-<div class="token delimitador">:</div>
-<div class="token delimitador">:</div>
+<div class="token separador">:</div>
+<div class="token separador">:</div>
 <div class="token identificador">palabra</div>
 <div class="token delimitador">)</div>
-<div class="token identificador">-></div>
+<div class="token operaciones_avanzadas">-></div>
 <div class="token tipo_dato">Stack</div>
 <div class="token delimitador">PolloCrudo</div>
 <div class="token tipo_dato">Stack</div>
 <div class="token identificador">index</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token numero">0</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token tipo_dato">Stack</div>
 <div class="token identificador">fin_index</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token tipo_dato">Stack</div>
 <div class="token identificador">conteo</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token numero">0</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token identificador">fin_index</div>
 <div class="token operaciones_avanzadas">=</div>
-<div class="token identificador">#palabra</div>
-<div class="token delimitador">;</div>
+<div class="token operador_string">#</div>
+<div class="token identificador">palabra</div>
+<div class="token separador">;</div>
 <div class="token control_ciclos">repeater</div>
 <div class="token identificador">index</div>
 <div class="token comparador"><</div>
@@ -75,74 +78,74 @@ body { font-family: Arial; background: #f4f4f4; padding: 20px; }
 <div class="token delimitador">PolloCrudo</div>
 <div class="token tipo_dato">Spider</div>
 <div class="token identificador">charAtIndex</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token identificador">charAtIndex</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">palabra</div>
 <div class="token delimitador">[</div>
 <div class="token identificador">index</div>
 <div class="token delimitador">]</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token identificador">charAtIndex</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">upper</div>
 <div class="token identificador">charAtIndex</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token control_ciclos">jukebox</div>
 <div class="token identificador">charAtIndex</div>
 <div class="token control_flujo">craft</div>
-<div class="token delimitador">,</div>
-<div class="token identificador">disc</div>
-<div class="token identificador">"A"</div>
-<div class="token delimitador">:</div>
+<div class="token separador">,</div>
+<div class="token control_ciclos">disc</div>
+<div class="token cadena">"A"</div>
+<div class="token separador">:</div>
 <div class="token identificador">conteo</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">conteo</div>
 <div class="token operador_incremento">soulsand</div>
-<div class="token delimitador">,</div>
-<div class="token identificador">disc</div>
-<div class="token identificador">"E"</div>
-<div class="token delimitador">:</div>
+<div class="token separador">,</div>
+<div class="token control_ciclos">disc</div>
+<div class="token cadena">"E"</div>
+<div class="token separador">:</div>
 <div class="token identificador">conteo</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">conteo</div>
 <div class="token operador_incremento">soulsand</div>
-<div class="token delimitador">,</div>
-<div class="token identificador">disc</div>
-<div class="token identificador">"I"</div>
-<div class="token delimitador">:</div>
+<div class="token separador">,</div>
+<div class="token control_ciclos">disc</div>
+<div class="token cadena">"I"</div>
+<div class="token separador">:</div>
 <div class="token identificador">conteo</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">conteo</div>
 <div class="token operador_incremento">soulsand</div>
-<div class="token delimitador">,</div>
-<div class="token identificador">disc</div>
-<div class="token identificador">"O"</div>
-<div class="token delimitador">:</div>
+<div class="token separador">,</div>
+<div class="token control_ciclos">disc</div>
+<div class="token cadena">"O"</div>
+<div class="token separador">:</div>
 <div class="token identificador">conteo</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">conteo</div>
 <div class="token operador_incremento">soulsand</div>
-<div class="token delimitador">,</div>
-<div class="token identificador">disc</div>
-<div class="token identificador">"U"</div>
-<div class="token delimitador">:</div>
+<div class="token separador">,</div>
+<div class="token control_ciclos">disc</div>
+<div class="token cadena">"U"</div>
+<div class="token separador">:</div>
 <div class="token identificador">conteo</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">conteo</div>
 <div class="token operador_incremento">soulsand</div>
-<div class="token delimitador">,</div>
+<div class="token separador">,</div>
 <div class="token control_ciclos">silence</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token identificador">index</div>
 <div class="token operaciones_avanzadas">=</div>
 <div class="token identificador">index</div>
 <div class="token operador_incremento">soulsand</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token delimitador">PolloAsado</div>
 <div class="token control_ciclos">respawn</div>
 <div class="token identificador">conteo</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token delimitador">PolloAsado</div>
 <div class="token estructura_programa">Ritual</div>
 <div class="token identificador">main</div>
@@ -151,33 +154,36 @@ body { font-family: Arial; background: #f4f4f4; padding: 20px; }
 <div class="token delimitador">PolloCrudo</div>
 <div class="token tipo_dato">Spider</div>
 <div class="token identificador">palabra</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token tipo_dato">Stack</div>
 <div class="token identificador">total</div>
-<div class="token delimitador">;</div>
+<div class="token separador">;</div>
 <div class="token identificador">palabra</div>
 <div class="token operaciones_avanzadas">=</div>
-<div class="token identificador">hopperSpider</div>
-<div class="token delimitador">(</div>
-<div class="token delimitador">)</div>
-<div class="token delimitador">;</div>
+<div class="token entrada_estandar">hopper</div>
+<div class="token tipo_dato">Spider</div>
+<div class="token separador">;</div>
 </div>
 <div class="estadisticas">
 <h2>Estadísticas</h2>
 <ul>
-<li>Identificador: 48</li>
+<li>Identificador: 35</li>
 <li>Numero: 2</li>
-<li>Delimitador: 40</li>
-<li>Estructura programa: 4</li>
+<li>Delimitador: 11</li>
+<li>Separador: 27</li>
+<li>Cadena: 5</li>
+<li>Estructura programa: 5</li>
 <li>Control flujo: 2</li>
-<li>Control ciclos: 4</li>
-<li>Operaciones avanzadas: 12</li>
-<li>Tipo dato: 8</li>
+<li>Control ciclos: 9</li>
+<li>Operaciones avanzadas: 13</li>
+<li>Tipo dato: 9</li>
 <li>Operador incremento: 6</li>
+<li>Operador string: 1</li>
 <li>Comparador: 1</li>
+<li>Entrada estandar: 1</li>
 <li>Comentario linea: 23</li>
 <li>Lineas: 44</li>
-<li>Caracteres: 1196</li>
+<li>Caracteres: 1195</li>
 </ul>
 </div>
 </body>

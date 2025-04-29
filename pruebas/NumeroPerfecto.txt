@@ -1,22 +1,41 @@
-spawn;
+WorldName NumeroPerfecto: $$ Programa para verificar si un número es perfecto
 
-caves section¿
-Hierro N := 28
-Hierro suma := 0
-Hierro i := 1
-Bronze esPerfecto := Vanilla
-?
+Bedrock $$ Constant Section
 
+CraftingTable $$ Routine Section
 
-Mobs section¿
-piglin(i < N, i+=1, i+=1)¿
-    zombie N % i = 0;
-        esqueleto suma := suma + i ;
-?
-zombie suma = N;
-    esqueleto esPerfecto := Vanilla;
-enderman esPerfecto := modded;
+Spell esPerfecto(Stack numero) -> Torch $$ Retorna On si es perfecto, Off si no
+PolloCrudo
 
-Tradeoff esPerfecto;
-?
-muerte
+    Stack suma = 0;
+    Stack divisor = 1;
+
+    repeater divisor < numero craft PolloCrudo
+        if (numero % divisor) == 0 craft hit
+            suma = suma + divisor;
+        miss
+            ;
+        $$ End if
+        divisor = divisor soulsand;
+    PolloAsado $$ End repeater
+
+    if suma is numero craft hit
+        return On;
+    miss
+        return Off;
+    $$ End if
+
+PolloAsado $$ End Spell
+
+Ritual main() $$ Procedimiento principal
+PolloCrudo
+
+    Stack numero;
+    Torch resultado;
+
+    numero = hopper Stack; $$ Ingreso del número
+
+    resultado = esPerfecto(numero);
+
+    dropper Torch resultado; $$ Mostrar si es perfecto o no
+PolloAsado $$ End Ritual

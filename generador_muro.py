@@ -1,7 +1,7 @@
 from scanner import Scanner
 import sys
 
-# Diccionario para convertir tipo numérico a clase CSS
+#Diccionario para convertir tipo numérico a clase CSS
 CLASES_CSS = {
     1: 'identificador',
     2: 'numero',
@@ -24,10 +24,12 @@ CLASES_CSS = {
     20: 'operador_caracter',
     21: 'operador_string',
     22: 'operador_archivo',
-    23: 'comparador'
+    23: 'comparador',
+    24: 'entrada_estandar',     
+    25: 'salida_estandar'      
 }
 
-# Inicializa estadísticas
+#estadísticas
 estadisticas = {clase: 0 for clase in CLASES_CSS.values()}
 estadisticas.update({
     'comentario_linea': 0,
@@ -42,12 +44,12 @@ def generar_muro(nombre_archivo):
         print("No se pudo abrir el archivo.")
         return
 
-    ladrillos = []  # Guardará los divs de los ladrillos
+    ladrillos = []  #Guardará los divs de los ladrillos
 
     while True:
         token = scanner.deme_token()
 
-        # Actualizar estadísticas
+        #Actualizar estadísticas
         if token['tipo'] != scanner.TIPOS_TOKEN['FIN_ARCHIVO']:
             estadisticas['caracteres'] += len(token['lexema'])
         if token['tipo'] == scanner.TIPOS_TOKEN['COMENTARIO']:
@@ -55,11 +57,11 @@ def generar_muro(nombre_archivo):
                 estadisticas['comentario_linea'] += 1
             elif token['lexema'].startswith('$*'):
                 estadisticas['comentario_bloque'] += 1
-            # NO se agrega ladrillo (se ignora el contenido visualmente)
+            #NO se agrega ladrillo
         elif token['tipo'] in CLASES_CSS:
             clase = CLASES_CSS[token['tipo']]
             estadisticas[clase] += 1
-            # Crear ladrillo solo si no es comentario
+            #Crear ladrillo solo si no es comentario
             ladrillo = f'<div class="token {clase}">{token["lexema"]}</div>'
             ladrillos.append(ladrillo)
         
@@ -71,16 +73,16 @@ def generar_muro(nombre_archivo):
 
     scanner.finalizar_scanner()
 
-    # Escribir el archivo HTML
+    #archivo HTML
     with open("muro.html", "w", encoding="utf-8") as f:
         f.write("<!DOCTYPE html>\n<html lang='es'>\n<head>\n")
         f.write("<meta charset='UTF-8'>\n<title>Muro de Ladrillos</title>\n")
-        # Estilos CSS (igual que antes)
+        #Estilos CSS (igual que antes)
         f.write("<style>\n")
         f.write("body { font-family: Arial; background: #f4f4f4; padding: 20px; }\n")
         f.write(".muro { display: flex; flex-wrap: wrap; gap: 5px; }\n")
         f.write(".token { padding: 10px; border-radius: 4px; color: white; font-weight: bold; }\n")
-        # Colores por clase
+        #Colores por clase
         f.write(".identificador { background-color: #3498db; }\n")
         f.write(".numero { background-color: #2ecc71; }\n")
         f.write(".operador_aritmetico { background-color: #e74c3c; }\n")
@@ -101,7 +103,10 @@ def generar_muro(nombre_archivo):
         f.write(".operador_caracter { background-color: #fd79a8; }\n")
         f.write(".operador_string { background-color: #00cec9; }\n")
         f.write(".operador_archivo { background-color: #636e72; }\n")
+        
         f.write(".comparador { background-color: #ffeaa7; color: #2d3436; }\n")
+        f.write(".entrada_estandar { background-color: #74b9ff; }\n")
+        f.write(".salida_estandar { background-color: #a29bfe; }\n")
         f.write(".estadisticas { margin-top: 30px; background: white; padding: 15px; border-radius: 8px; }\n")
         f.write("</style>\n</head>\n<body>\n")
         f.write("<h1>Muro de Ladrillos</h1>\n")
@@ -110,7 +115,7 @@ def generar_muro(nombre_archivo):
             f.write(ladrillo + '\n')
         f.write("</div>\n")
         
-        # Estadísticas
+        #Estadísticas
         f.write('<div class="estadisticas">\n<h2>Estadísticas</h2>\n<ul>\n')
         for key, value in estadisticas.items():
             if value > 0:

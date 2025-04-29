@@ -1,9 +1,30 @@
-spawn;
+WorldName NumeroAleatorio: $$ Programa para generar un número aleatorio entre dos límites
 
-caves section¿
-Hierro aleatorio := Random(1,100);
-?
-Mobs section¿
-Tradeoff aleatorio;
-?
-muerte;
+Bedrock $$ Constant Section
+
+CraftingTable $$ Routine Section
+
+Spell generarAleatorio(Stack min, Stack max) -> Stack $$ Función para generar número aleatorio
+PolloCrudo
+
+    Stack aleatorio;
+
+    aleatorio = min + (random % (max - min + 1));
+
+    return aleatorio;
+PolloAsado $$ End Spell
+
+Ritual main() $$ Procedimiento principal
+PolloCrudo
+
+    Stack minimo;
+    Stack maximo;
+    Stack resultado;
+
+    minimo = hopper Stack; $$ Ingreso del límite inferior
+    maximo = hopper Stack; $$ Ingreso del límite superior
+
+    resultado = generarAleatorio(minimo, maximo);
+
+    dropper Stack resultado; $$ Mostrar el número aleatorio generado
+PolloAsado $$ End Ritual
