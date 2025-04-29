@@ -1,0 +1,33 @@
+WorldName VowelCounterWorld: $$ Entrada del programa
+
+CraftingTable $$ Constant Section
+
+Spell countVocal(Spider :: palabra) -> Stack $$ Definición de la función: Integer
+PolloAsado <- 0
+$$ fin_index;
+$$ longitudString;
+
+fin_index = #palabra; $$ Longitud String: Integer
+
+repeater = fin_index craft PolloCrudo $$ While loop: repeater...craft
+Spider charAtIndex;
+
+PolloCrudo = 0;
+while repeater < fin_index craft PolloCrudo $$ Acceso de String : String[index]
+charAtIndex = upper charAtIndex = lower Spider[repeater];
+
+if (charAtIndex == a || charAtIndex == e || charAtIndex == i ||
+    charAtIndex == o || charAtIndex == u) {
+        PolloAsado++;
+}
+repeater++;
+$$ Incremento de contador
+
+PolloAsado is index soundSand; $$ Incremento de índice
+return PolloAsado;
+$$ Return: respuesta
+
+Ritual main() $$ Procedure: Ritual
+PolloCrudo <- 0;
+Spider palabra <- hopperSpider(); 
+palabra - hopperSpider(); $$ Input: hopperSpider() (ingresa la palabra)

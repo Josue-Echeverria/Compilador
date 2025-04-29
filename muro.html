@@ -9,109 +9,155 @@ body { font-family: Arial; background: #f4f4f4; padding: 20px; }
 .token { padding: 10px; border-radius: 4px; color: white; font-weight: bold; }
 .identificador { background-color: #3498db; }
 .numero { background-color: #2ecc71; }
-.operador { background-color: #e74c3c; }
+.operador_aritmetico { background-color: #e74c3c; }
 .delimitador { background-color: #95a5a6; }
+.separador { background-color: #7f8c8d; }
 .cadena { background-color: #e67e22; }
-.comentario { background-color: #9b59b6; }
 .error { background-color: #000000; color: white; }
+.estructura_programa { background-color: #1abc9c; }
+.control_flujo { background-color: #f39c12; }
+.control_ciclos { background-color: #8e44ad; }
+.operaciones_avanzadas { background-color: #7f8c8d; }
+.tipo_dato { background-color: #2c3e50; }
+.literal_booleano { background-color: #27ae60; }
+.literal_archivo { background-color: #c0392b; }
+.literal_caracter { background-color: #d35400; }
+.operador_incremento { background-color: #e84393; }
+.operador_logico { background-color: #6c5ce7; }
+.operador_caracter { background-color: #fd79a8; }
+.operador_string { background-color: #00cec9; }
+.operador_archivo { background-color: #636e72; }
+.comparador { background-color: #ffeaa7; color: #2d3436; }
 .estadisticas { margin-top: 30px; background: white; padding: 15px; border-radius: 8px; }
 </style>
 </head>
 <body>
 <h1>Muro de Ladrillos</h1>
 <div class="muro">
-<div class="token identificador">spawn</div>
-<div class="token delimitador">;</div>
-<div class="token identificador">Blocks</div>
-<div class="token identificador">sectionÂ</div>
-<div class="token error">¿</div>
-<div class="token identificador">forjado</div>
-<div class="token identificador">Esmeralda</div>
-<div class="token identificador">lista</div>
-<div class="token error">:</div>
-<div class="token operador">=</div>
-<div class="token delimitador">[</div>
-<div class="token numero">1</div>
-<div class="token delimitador">,</div>
-<div class="token numero">3</div>
-<div class="token delimitador">,</div>
-<div class="token numero">4</div>
-<div class="token delimitador">,</div>
-<div class="token numero">6</div>
-<div class="token delimitador">,</div>
-<div class="token numero">8</div>
-<div class="token delimitador">]</div>
-<div class="token delimitador">;</div>
-<div class="token error">?</div>
-<div class="token identificador">caves</div>
-<div class="token identificador">sectionÂ</div>
-<div class="token error">¿</div>
-<div class="token identificador">Hierro</div>
-<div class="token identificador">i</div>
-<div class="token error">:</div>
-<div class="token operador">=</div>
+<div class="token estructura_programa">WorldName</div>
+<div class="token identificador">VowelCounterWorld</div>
+<div class="token separador">:</div>
+<div class="token estructura_programa">CraftingTable</div>
+<div class="token estructura_programa">Spell</div>
+<div class="token identificador">countVocal</div>
+<div class="token identificador">(Spider</div>
+<div class="token separador">:</div>
+<div class="token separador">:</div>
+<div class="token identificador">palabra</div>
+<div class="token identificador">)</div>
+<div class="token identificador">-></div>
+<div class="token tipo_dato">Stack</div>
+<div class="token delimitador">PolloAsado</div>
+<div class="token identificador"><-</div>
 <div class="token numero">0</div>
-<div class="token delimitador">;</div>
-<div class="token identificador">Hierro</div>
-<div class="token identificador">encontrado</div>
-<div class="token error">:</div>
-<div class="token operador">=</div>
+<div class="token identificador">fin_index</div>
+<div class="token operaciones_avanzadas">=</div>
+<div class="token error">#</div>
+<div class="token identificador">palabra</div>
+<div class="token identificador">;</div>
+<div class="token control_ciclos">repeater</div>
+<div class="token operaciones_avanzadas">=</div>
+<div class="token identificador">fin_index</div>
+<div class="token control_flujo">craft</div>
+<div class="token delimitador">PolloCrudo</div>
+<div class="token tipo_dato">Spider</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token identificador">;</div>
+<div class="token delimitador">PolloCrudo</div>
+<div class="token operaciones_avanzadas">=</div>
 <div class="token numero">0</div>
-<div class="token delimitador">;</div>
-<div class="token identificador">Hierro</div>
-<div class="token identificador">objetivo</div>
-<div class="token error">:</div>
-<div class="token operador">=</div>
-<div class="token numero">4</div>
-<div class="token delimitador">;</div>
-<div class="token error">?</div>
-<div class="token identificador">Mobs</div>
-<div class="token identificador">sectionÂ</div>
-<div class="token error">¿</div>
-<div class="token identificador">creeper</div>
+<div class="token identificador">;</div>
+<div class="token identificador">while</div>
+<div class="token control_ciclos">repeater</div>
+<div class="token comparador"><</div>
+<div class="token identificador">fin_index</div>
+<div class="token control_flujo">craft</div>
+<div class="token delimitador">PolloCrudo</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token operaciones_avanzadas">=</div>
+<div class="token identificador">upper</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token operaciones_avanzadas">=</div>
+<div class="token identificador">lower</div>
+<div class="token tipo_dato">Spider</div>
+<div class="token identificador">[repeater</div>
+<div class="token identificador">]</div>
+<div class="token identificador">;</div>
+<div class="token identificador">if</div>
+<div class="token identificador">(charAtIndex</div>
+<div class="token identificador">==</div>
+<div class="token identificador">a</div>
+<div class="token identificador">||</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token identificador">==</div>
+<div class="token identificador">e</div>
+<div class="token identificador">||</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token identificador">==</div>
 <div class="token identificador">i</div>
-<div class="token operador"><</div>
-<div class="token identificador">contar</div>
-<div class="token identificador">lista</div>
-<div class="token identificador">Â</div>
-<div class="token error">¿</div>
-<div class="token identificador">zombie</div>
-<div class="token identificador">lista</div>
-<div class="token error">@</div>
-<div class="token identificador">i</div>
-<div class="token operador">=</div>
-<div class="token identificador">objetivo</div>
-<div class="token delimitador">;</div>
-<div class="token identificador">esqueleto</div>
-<div class="token identificador">encontrado</div>
-<div class="token error">:</div>
-<div class="token operador">=</div>
-<div class="token numero">1</div>
-<div class="token identificador">espada</div>
-<div class="token delimitador">;</div>
-<div class="token identificador">i</div>
-<div class="token operador">+</div>
-<div class="token operador">=</div>
-<div class="token numero">1</div>
-<div class="token delimitador">;</div>
-<div class="token error">?</div>
-<div class="token identificador">Tradeoff</div>
-<div class="token identificador">encontrado</div>
-<div class="token delimitador">;</div>
-<div class="token error">?</div>
-<div class="token identificador">muerte</div>
-<div class="token delimitador">;</div>
+<div class="token identificador">||</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token identificador">==</div>
+<div class="token identificador">o</div>
+<div class="token identificador">||</div>
+<div class="token identificador">charAtIndex</div>
+<div class="token identificador">==</div>
+<div class="token identificador">u</div>
+<div class="token identificador">)</div>
+<div class="token identificador">{</div>
+<div class="token identificador">PolloAsado++</div>
+<div class="token identificador">;</div>
+<div class="token identificador">}</div>
+<div class="token identificador">repeater++</div>
+<div class="token identificador">;</div>
+<div class="token delimitador">PolloAsado</div>
+<div class="token comparador">is</div>
+<div class="token identificador">index</div>
+<div class="token identificador">soundSand</div>
+<div class="token identificador">;</div>
+<div class="token identificador">return</div>
+<div class="token delimitador">PolloAsado</div>
+<div class="token identificador">;</div>
+<div class="token estructura_programa">Ritual</div>
+<div class="token identificador">main</div>
+<div class="token identificador">(</div>
+<div class="token identificador">)</div>
+<div class="token delimitador">PolloCrudo</div>
+<div class="token identificador"><-</div>
+<div class="token numero">0</div>
+<div class="token identificador">;</div>
+<div class="token tipo_dato">Spider</div>
+<div class="token identificador">palabra</div>
+<div class="token identificador"><-</div>
+<div class="token identificador">hopperSpider</div>
+<div class="token identificador">(</div>
+<div class="token identificador">)</div>
+<div class="token identificador">;</div>
+<div class="token identificador">palabra</div>
+<div class="token operador_aritmetico">-</div>
+<div class="token identificador">hopperSpider</div>
+<div class="token identificador">(</div>
+<div class="token identificador">)</div>
+<div class="token identificador">;</div>
 </div>
 <div class="estadisticas">
 <h2>Estadísticas</h2>
 <ul>
-<li>Identificador: 32</li>
-<li>Numero: 10</li>
-<li>Operador: 9</li>
-<li>Delimitador: 16</li>
-<li>Error: 14</li>
-<li>Lineas: 20</li>
-<li>Caracteres: 241</li>
+<li>Identificador: 71</li>
+<li>Numero: 3</li>
+<li>Operador aritmetico: 1</li>
+<li>Delimitador: 7</li>
+<li>Separador: 3</li>
+<li>Error: 1</li>
+<li>Estructura programa: 4</li>
+<li>Control flujo: 2</li>
+<li>Control ciclos: 2</li>
+<li>Operaciones avanzadas: 5</li>
+<li>Tipo dato: 4</li>
+<li>Comparador: 2</li>
+<li>Comentario linea: 13</li>
+<li>Lineas: 33</li>
+<li>Caracteres: 830</li>
 </ul>
 </div>
 </body>

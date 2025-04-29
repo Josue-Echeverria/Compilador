@@ -1,5 +1,7 @@
+import pandas as pd
+
 class Scanner:
-    def __init__(self):
+    def __init__(self, matriz_csv):
         self.archivo = None
         self.buffer = ""
         self.posicion = 0
@@ -8,27 +10,37 @@ class Scanner:
         self.token_actual = None
         self.fin_archivo = False
         
-        # Definición de tipos de tokens
+        self.matriz = pd.read_csv(matriz_csv, index_col=0, dtype=str).fillna('')
+        
         self.TIPOS_TOKEN = {
             'IDENTIFICADOR': 1,
-            'NUMERO': 2,
-            'OPERADOR': 3,
+            'LITERAL_NUMERO': 2,
+            'OPERADOR_ARITMETICO': 3,
             'DELIMITADOR': 4,
-            'CADENA': 5,
-            'COMENTARIO': 6,
-            'FIN_ARCHIVO': 7,
-            'ERROR': 8
+            'SEPARADOR': 5,
+            'LITERAL_CADENA': 6,
+            'COMENTARIO': 7,
+            'FIN_ARCHIVO': 8,
+            'ERROR': 9,
+            'ESTRUCTURA_PROGRAMA': 10,
+            'CONTROL_FLUJO': 11,
+            'CONTROL_CICLOS': 12,
+            'OPERACIONES_AVANZADAS': 13,
+            'TIPO_DATO': 14,
+            'LITERAL_BOOLEANO': 15,
+            'LITERAL_ARCHIVO': 16,
+            'LITERAL_CARACTER': 17,
+            'OPERADOR_INCREMENTO': 18,
+            'OPERADOR_LOGICO': 19,
+            'OPERADOR_CARACTER': 20,
+            'OPERADOR_STRING': 21,
+            'OPERADOR_ARCHIVO': 22,
+            'COMPARADOR': 23
         }
-        
-        # Caracteres especiales
-        self.OPERADORES = "+-*/=<>!&|%^"
-        self.DELIMITADORES = "(){};,[]."
-        self.ESPACIOS = " \t\n\r"
-        
+
     def inicializar_scanner(self, nombre_archivo):
-        """Inicializa el scanner abriendo el archivo de entrada."""
         try:
-            self.archivo = open(nombre_archivo, 'r')
+            self.archivo = open(nombre_archivo, 'r', encoding='utf-8')
             self.buffer = ""
             self.posicion = 0
             self.linea_actual = 1
@@ -39,319 +51,151 @@ class Scanner:
         except FileNotFoundError:
             print(f"Error: No se pudo abrir el archivo '{nombre_archivo}'")
             return False
-    
+
     def finalizar_scanner(self):
-        """Cierra el archivo y libera recursos."""
         if self.archivo:
             self.archivo.close()
             self.archivo = None
-    
+
     def deme_caracter(self):
-        """Lee un carácter del archivo de entrada."""
         if self.posicion >= len(self.buffer):
-            # Si hemos leído todos los caracteres en el buffer, leemos más
             linea = self.archivo.readline()
             if not linea:
                 self.fin_archivo = True
                 return ''
             self.buffer = linea
             self.posicion = 0
-        
         caracter = self.buffer[self.posicion]
         self.posicion += 1
         self.columna_actual += 1
-        
-        # Actualizar línea y columna si es un salto de línea
         if caracter == '\n':
             self.linea_actual += 1
             self.columna_actual = 0
-        
         return caracter
-    
+
     def tome_caracter(self):
-        """Retrocede un carácter en el buffer de entrada."""
         if self.posicion > 0:
             self.posicion -= 1
             self.columna_actual -= 1
-            # Si el carácter anterior era un salto de línea, ajustamos línea y columna
             if self.buffer[self.posicion] == '\n':
                 self.linea_actual -= 1
-                # Para calcular la columna correctamente, necesitaríamos conocer el ancho de la línea anterior
-                # Por simplicidad, lo dejamos en 0
                 self.columna_actual = 0
-    
-    def es_letra(self, caracter):
-        """Verifica si un carácter es una letra."""
-        return caracter.isalpha() or caracter == '_'
-    
-    def es_digito(self, caracter):
-        """Verifica si un carácter es un dígito."""
-        return caracter.isdigit()
-    
-    def es_espacio(self, caracter):
-        """Verifica si un carácter es un espacio en blanco."""
-        return caracter in self.ESPACIOS
-    
-    def es_operador(self, caracter):
-        """Verifica si un carácter es un operador."""
-        return caracter in self.OPERADORES
-    
-    def es_delimitador(self, caracter):
-        """Verifica si un carácter es un delimitador."""
-        return caracter in self.DELIMITADORES
-    
+
     def deme_token(self):
-        """
-        Analiza el siguiente token del archivo de entrada.
-        Retorna un diccionario con información del token.
-        """
-        # Ignorar espacios en blanco
-        caracter = self.deme_caracter()
-        while caracter and self.es_espacio(caracter):
+        delimitadores = ['(', ')', '{', '}', ':', ';', ',', '.', '[', ']']
+        # Ignorar espacios
+        while True:
             caracter = self.deme_caracter()
-        
-        # Si llegamos al final del archivo
+            if not caracter or caracter not in [' ', '\t', '\n', '\r']:
+                break
         if not caracter:
-            self.token_actual = {
-                'tipo': self.TIPOS_TOKEN['FIN_ARCHIVO'],
-                'lexema': '',
-                'linea': self.linea_actual,
-                'columna': self.columna_actual
-            }
+            self.token_actual = {'tipo': self.TIPOS_TOKEN['FIN_ARCHIVO'], 'lexema': '', 'linea': self.linea_actual, 'columna': self.columna_actual}
             return self.token_actual
-        
-        # Posición de inicio del token
+
+        lexema = ''
+        estado_actual = 'q0'
         linea_inicio = self.linea_actual
-        columna_inicio = self.columna_actual - 1  # Restamos 1 porque ya incrementamos al leer el carácter
-        
-        # Identificadores: comienzan con una letra o guion bajo
-        if self.es_letra(caracter):
-            lexema = caracter
-            caracter = self.deme_caracter()
-            while caracter and (self.es_letra(caracter) or self.es_digito(caracter)):
-                lexema += caracter
-                caracter = self.deme_caracter()
-            
-            # Retroceder un carácter ya que no es parte del identificador
-            if caracter:
-                self.tome_caracter()
-            
-            self.token_actual = {
-                'tipo': self.TIPOS_TOKEN['IDENTIFICADOR'],
-                'lexema': lexema,
-                'linea': linea_inicio,
-                'columna': columna_inicio
-            }
-            return self.token_actual
-        
-        # Números
-        elif self.es_digito(caracter):
-            lexema = caracter
-            caracter = self.deme_caracter()
-            while caracter and self.es_digito(caracter):
-                lexema += caracter
-                caracter = self.deme_caracter()
-            
-            # Manejar números con punto decimal
-            if caracter == '.':
-                lexema += caracter
-                caracter = self.deme_caracter()
-                while caracter and self.es_digito(caracter):
-                    lexema += caracter
-                    caracter = self.deme_caracter()
-            
-            # Retroceder un carácter
-            if caracter:
-                self.tome_caracter()
-            
-            self.token_actual = {
-                'tipo': self.TIPOS_TOKEN['NUMERO'],
-                'lexema': lexema,
-                'linea': linea_inicio,
-                'columna': columna_inicio
-            }
-            return self.token_actual
-        
-        # Operadores
-        elif self.es_operador(caracter):
-            lexema = caracter
-            
-            # Manejar operadores de dos caracteres (==, !=, <=, >=, &&, ||)
-            siguiente = self.deme_caracter()
-            if siguiente:
-                if (caracter == '=' and siguiente == '=') or \
-                   (caracter == '!' and siguiente == '=') or \
-                   (caracter == '<' and siguiente == '=') or \
-                   (caracter == '>' and siguiente == '=') or \
-                   (caracter == '&' and siguiente == '&') or \
-                   (caracter == '|' and siguiente == '|'):
-                    lexema += siguiente
-                else:
-                    self.tome_caracter()
-            
-            self.token_actual = {
-                'tipo': self.TIPOS_TOKEN['OPERADOR'],
-                'lexema': lexema,
-                'linea': linea_inicio,
-                'columna': columna_inicio
-            }
-            return self.token_actual
-        
-        # Delimitadores
-        elif self.es_delimitador(caracter):
-            self.token_actual = {
-                'tipo': self.TIPOS_TOKEN['DELIMITADOR'],
-                'lexema': caracter,
-                'linea': linea_inicio,
-                'columna': columna_inicio
-            }
-            return self.token_actual
-        
-        # Cadenas de texto
-        elif caracter == '"' or caracter == "'":
-            delimitador = caracter
-            lexema = caracter
-            caracter = self.deme_caracter()
-            while caracter and caracter != delimitador:
-                lexema += caracter
-                caracter = self.deme_caracter()
-            
-            if caracter == delimitador:
-                lexema += caracter
-                self.token_actual = {
-                    'tipo': self.TIPOS_TOKEN['CADENA'],
-                    'lexema': lexema,
-                    'linea': linea_inicio,
-                    'columna': columna_inicio
-                }
-            else:
-                self.token_actual = {
-                    'tipo': self.TIPOS_TOKEN['ERROR'],
-                    'lexema': lexema,
-                    'linea': linea_inicio,
-                    'columna': columna_inicio,
-                    'mensaje': 'Cadena no cerrada'
-                }
-            return self.token_actual
-        
+        columna_inicio = self.columna_actual - 1
+
         # Comentarios
-        elif caracter == '/':
+        if caracter == '$':
             siguiente = self.deme_caracter()
-            if siguiente == '/':  # Comentario de una línea
-                lexema = '//'
+            if siguiente == '$':  # Comentario de línea
+                contenido = ''
                 caracter = self.deme_caracter()
                 while caracter and caracter != '\n':
-                    lexema += caracter
+                    if caracter != '$':  # Ignora los signos de dólar
+                        contenido += caracter
                     caracter = self.deme_caracter()
-                
-                self.token_actual = {
-                    'tipo': self.TIPOS_TOKEN['COMENTARIO'],
-                    'lexema': lexema,
-                    'linea': linea_inicio,
-                    'columna': columna_inicio
-                }
+                lexema = '$$' + contenido  # Solo los delimitadores mantienen $
+                self.token_actual = {'tipo': self.TIPOS_TOKEN['COMENTARIO'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio}
                 return self.token_actual
+
             elif siguiente == '*':  # Comentario multilínea
-                lexema = '/*'
-                caracter = self.deme_caracter()
+                contenido = ''
                 cerrado = False
-                while caracter and not cerrado:
+                caracter = self.deme_caracter()
+                while caracter:
                     if caracter == '*':
                         sig = self.deme_caracter()
-                        if sig == '/':
-                            lexema += '*/'
+                        if sig == '$':
                             cerrado = True
+                            break
                         else:
-                            lexema += '*'
-                            if sig:
-                                self.tome_caracter()
+                            if caracter != '$':
+                                contenido += caracter
+                            if sig != '$':
+                                contenido += sig
                     else:
-                        lexema += caracter
-                    
-                    if not cerrado:
-                        caracter = self.deme_caracter()
-                
+                        if caracter != '$':
+                            contenido += caracter
+                    caracter = self.deme_caracter()
+                lexema = '$*' + contenido + '*$' if cerrado else '$*' + contenido
                 if cerrado:
-                    self.token_actual = {
-                        'tipo': self.TIPOS_TOKEN['COMENTARIO'],
-                        'lexema': lexema,
-                        'linea': linea_inicio,
-                        'columna': columna_inicio
-                    }
+                    self.token_actual = {'tipo': self.TIPOS_TOKEN['COMENTARIO'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio}
                 else:
-                    self.token_actual = {
-                        'tipo': self.TIPOS_TOKEN['ERROR'],
-                        'lexema': lexema,
-                        'linea': linea_inicio,
-                        'columna': columna_inicio,
-                        'mensaje': 'Comentario multilínea no cerrado'
-                    }
+                    self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Comentario multilínea no cerrado'}
                 return self.token_actual
             else:
-                # Solo es un operador de división
                 if siguiente:
                     self.tome_caracter()
-                
-                self.token_actual = {
-                    'tipo': self.TIPOS_TOKEN['OPERADOR'],
-                    'lexema': '/',
-                    'linea': linea_inicio,
-                    'columna': columna_inicio
-                }
+                self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': '$', 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Carácter no reconocido'}
                 return self.token_actual
-        
-        # Carácter no reconocido
-        else:
-            self.token_actual = {
-                'tipo': self.TIPOS_TOKEN['ERROR'],
-                'lexema': caracter,
-                'linea': linea_inicio,
-                'columna': columna_inicio,
-                'mensaje': 'Carácter no reconocido'
-            }
+
+        # Procesar token con matriz
+        if caracter not in self.matriz.index or 'q0' not in self.matriz.columns:
+            self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': caracter, 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Carácter no reconocido en q0'}
             return self.token_actual
-    
+
+        estado_actual = self.matriz.at[caracter, 'q0']
+        if not estado_actual:
+            self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': caracter, 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Sin transición desde q0'}
+            return self.token_actual
+
+        lexema += caracter
+
+        # Recorrido del lexema completo
+        while True:
+            caracter = self.deme_caracter()
+            if not caracter:
+                break
+            if caracter in [' ', '\t', '\n', '\r']:
+                break
+            if caracter in delimitadores:
+                self.tome_caracter()
+                break
+
+            if estado_actual != 'q9999':
+                if caracter not in self.matriz.index:
+                    estado_actual = 'q9999'
+                else:
+                    estado_destino = self.matriz.at[caracter, estado_actual]
+                    if not estado_destino:
+                        estado_actual = 'q9999'
+                    else:
+                        lexema += caracter
+                        estado_actual = estado_destino
+                        continue
+            if estado_actual == 'q9999':
+                if caracter in [':', ';', ',', '(', ')', '{', '}', '[', ']']:
+                    self.tome_caracter()
+                    break
+                lexema += caracter
+
+        # Validar estado final al terminar
+        if estado_actual == 'q9999':
+            self.token_actual = {'tipo': self.TIPOS_TOKEN['IDENTIFICADOR'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio}
+        else:
+            tipo_token_codigo = self.matriz.at['FINAL', estado_actual]
+            if tipo_token_codigo:
+                tipo_token = int(tipo_token_codigo)
+                self.token_actual = {'tipo': tipo_token, 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio}
+            else:
+                self.token_actual = {'tipo': self.TIPOS_TOKEN['ERROR'], 'lexema': lexema, 'linea': linea_inicio, 'columna': columna_inicio, 'mensaje': 'Estado no final'}
+        return self.token_actual
     def tome_token(self):
-        """
-        Consume el token actual.
-        Retorna True si hay más tokens disponibles, False en caso contrario.
-        """
         if not self.token_actual:
             self.deme_token()
-        
-        # Guardar una copia del token actual antes de consumirlo
         token_consumido = self.token_actual
         self.token_actual = None
-        
-        # Devolver True si no hemos llegado al final del archivo
         return token_consumido['tipo'] != self.TIPOS_TOKEN['FIN_ARCHIVO']
-
-
-# Ejemplo de uso
-def ejemplo_uso():
-    scanner = Scanner()
-    
-    if scanner.inicializar_scanner("pruebas/BusquedaLineal.txt"):
-        print("Scanner inicializado correctamente.")
-        
-        # Procesamos todos los tokens
-        while True:
-            token = scanner.deme_token()
-            
-            print(f"Token encontrado - Tipo: {token['tipo']}, Lexema: '{token['lexema']}', Línea: {token['linea']}, Columna: {token['columna']}")
-            
-            if token['tipo'] == scanner.TIPOS_TOKEN['FIN_ARCHIVO']:
-                print("Fin del archivo alcanzado.")
-                break
-            
-            # Consumimos el token
-            scanner.tome_token()
-        
-        scanner.finalizar_scanner()
-        print("Scanner finalizado.")
-    else:
-        print("No se pudo inicializar el scanner.")
-
-
-if __name__ == "__main__":
-    ejemplo_uso()

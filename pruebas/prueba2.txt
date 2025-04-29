@@ -1,0 +1,30 @@
+WorldName 02:
+
+Bedrock
+Obsidian Stack LIMITE 5
+
+ResourcePack: 01: Entity
+Anvil Enemigo -> Entity
+
+Inventory
+Stack contador = 0
+Torch encontrado = Off
+
+CraftingTable
+
+Ritual buscarVocal(Rune :: letra)
+  target (letra add VOCALES)
+    craft hit dropper<Spider>("¡Vocal encontrada!")
+    miss dropper<Spider>("No es vocal");
+
+SpawnPoint
+repeater contador < LIMITE
+  craft
+    dropper<Stack>(contador)
+    contador soulsand
+;
+
+Rune letraActual = 'e'
+buscarVocal(letraActual)
+
+worldSave
