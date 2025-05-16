@@ -25,6 +25,8 @@ datos Segment
     mensajeErrorArchivoNoInt db 10,13,'Error: No existe un valor numerico en el archivo$'
     mensajeErrorArchivoOrverflow db 10,13,'Error: Overflow en la conversion del archivo a entero$'
 	mensajeErrorNoBoolean db 10,13,'Error: No se introdujo un booleano $'
+    mensajeErrorStringIndexError db 10,13,'Error: El indice del string no existe$'
+    mensajeErrorCharNoEncontrado db 10,13,'Error: El caracter no fue encontrado en la cadena$'
 
     true db '1 (vedadero)$'
     false db '0 (falso)$'
@@ -34,7 +36,7 @@ datos Segment
 datos Ends
 
 procedimientos Segment
-    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString, archivotochar,archivotostring
+    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString, archivotochar,archivotostring, checkStringIndex, input, getStringLength, concatString, findChar, underCutString, orOperand, andOperand, xorOperand, notOperand, esDigito, esAlpha, toMayuscula, toMinuscula
     assume cs:procedimientos, ds:datos
 
     print proc far ; input : push offset string 
@@ -54,6 +56,8 @@ procedimientos Segment
     stringtoint proc far 
         mov bp, sp     
         mov bx, [bp+4]  ; bx = dir de la string
+        xor ax, ax
+        mov [bp+6], ax  ; integer = 0
         mov cl, [bx+1]  ; longitud de string
         mov dx, 1       ; dx = 10^longitud de string
     loopStringtoInt:
@@ -339,8 +343,24 @@ procedimientos Segment
 
         printArchivoOverflowError: ; Error 6
         cmp bx, 6
-        jne finError
+        jne printStringIndexError
         mov dx, offset mensajeErrorArchivoOrverflow
+        mov ah, 9
+        int 21h
+        jmp finError
+
+        printStringIndexError: ; Error 7
+        cmp bx, 7
+        jne printNoCharFoundError
+        mov dx, offset mensajeErrorStringIndexError
+        mov ah, 9
+        int 21h
+        jmp finError
+
+        printNoCharFoundError: ; Error 8
+        cmp bx, 8
+        jne finError
+        mov dx, offset mensajeErrorCharNoEncontrado
         mov ah, 9
         int 21h
 
@@ -419,5 +439,252 @@ procedimientos Segment
         retf 4
     endp
 
+    ; Verifica que la posicion existe en el string
+    checkStringIndex proc far
+        mov bp, sp
+        mov bx, [bp+4]  ; bx = dir de la string 
+        mov cx, [bx]
+        cmp cx, 32  ; 32 es el tamaño maxion del string|
+        jg noIndexError
+        mov bx, [bp+6]
+        add bx, cx
+        mov al, byte ptr [bx+2]
+        cmp al, 0
+        jne finCheckStringIndex
+
+    noIndexError:
+        mov bx, 7
+        call handleError
+    finCheckStringIndex:
+        retf 4
+    endp
+
+    getStringLength proc far
+        mov bp, sp
+        mov bx, [bp+4]  ; bx = dir de la string 
+        lea si, [bx]
+        xor cx, cx
+    lengthLoop:
+        lodsb
+        cmp al, 0
+        je lengthDone
+        cmp cx, 32
+        jae lengthDone
+        inc cx
+        jmp lengthLoop
+    lengthDone:
+        mov bx, [bp+6]  
+        mov [bx], cx
+        retf 4
+    endp
+
+    concatString proc far
+        mov bp, sp
+        mov bx, [bp+8]  
+        mov di, [bp+4] 
+        mov cx, 32
+    concatLoop1:
+        mov al, byte ptr [bx]
+        cmp al, 0
+        je concatDone1
+        cmp al, 0dh
+        je concatDone1
+        stosb
+        inc bx
+        jmp concatLoop1
+    concatDone1:
+        mov bx, [bp+6]  
+    concatLoop2:
+        mov al, byte ptr [bx]
+        cmp al, 0
+        je concatDone2
+        cmp al, 0dh
+        je concatDone2
+        stosb
+        inc bx
+        jmp concatLoop2
+    concatDone2:
+        mov al, '$'
+        stosb    
+        ret 6
+    endp
+
+    findChar proc far
+        mov bp, sp
+        mov bx, [bp+8]  ; bx = dir de la string 
+        mov ah, byte ptr [bp+6]  ; ah = char a buscar
+    findloop:
+        mov al, byte ptr [bx]
+        cmp al, 0
+        je notFound
+        cmp al, ah
+        je found
+        inc cx
+        inc bx
+        jmp findLoop
+    found:
+        mov bx, [bp+4]
+        mov [bx], cx
+        ret 6
+    notFound:
+        mov bx, 8
+        call handleError
+    endp
+
+    underCutString proc far
+        mov bp, sp
+        mov si, [bp+10] 
+        mov di, [bp+4]  
+        mov cx, [bp+8]
+    goToStartLoop:
+        cmp cx, 0
+        je startCut
+        lodsb
+        stosb
+        dec cx
+        jmp goToStartLoop
+    startCut:
+        mov ax, [bp+6]
+        add si, ax
+    underCuttingLoop:
+        lodsb
+        cmp al, 0
+        je endUnderCutString
+        cmp al, 0dh
+        je endUnderCutString
+        stosb
+        jmp underCuttingLoop
+    endUnderCutString:
+        mov al, '$'
+        stosb
+        ret 8
+    endp
+
+    orOperand proc far
+        mov bp, sp
+        mov bx, [bp+8]  ; bx = dir de la string
+        mov ax, [bp+6]  ; ax = primer operando
+        or ax, bx
+        add al, '0'
+        mov bx, [bp+4]  
+        mov byte ptr [bx], al
+        ret 6
+    endp
+
+    andOperand proc far
+        mov bp, sp
+        mov bx, [bp+8]  ; bx = dir de la string
+        mov ax, [bp+6]  ; ax = primer operando
+        and ax, bx
+        add al, '0'
+        mov bx, [bp+4]  
+        mov byte ptr [bx], al
+        ret 6
+    endp
+
+    xorOperand proc far
+        mov bp, sp
+        mov bx, [bp+8]  ; bx = dir de la string
+        mov ax, [bp+6]  ; ax = primer operando
+        xor ax, bx
+        add al, '0'
+        mov bx, [bp+4]  
+        mov byte ptr [bx], al
+        ret 6
+    endp
+
+    notOperand proc far
+        mov bp, sp
+        mov bx, [bp+8]  ; bx = dir de la string
+        mov ax, [bp+6]  ; ax = primer operando
+        xor al, 1   ; Invierte el bit (0 se vuelve 1, 1 se vuelve 0)
+        add al, '0'
+        mov bx, [bp+4]  
+        mov byte ptr [bx], al
+        ret 6
+    endp
+
+    esDigito proc far
+        mov bp, sp
+        mov al, byte ptr[bp+4]  
+        cmp al, '0'
+        jb noEsDigito_Print
+        cmp al, '9'
+        ja noEsDigito_Print
+        ; Es un dígito
+        mov bx, [bp+6]
+        mov byte ptr [bx], 1
+        jmp finEsDigito
+    noEsDigito_Print:
+        ; No es un dígito
+        mov bx, [bp+6]
+        mov byte ptr [bx], 0
+    finEsDigito:
+        ret 2
+    endp
+
+    esAlpha proc far
+        mov bp, sp
+        mov al, byte ptr[bp+4]  
+        cmp al, 'a'
+        jb checkMayusculaAlpha
+        cmp al, 'z'
+        ja checkMayusculaAlpha
+        mov bx, [bp+6]
+        mov byte ptr [bx], 1
+        jmp finEsAlpha
+    
+    checkMayusculaAlpha:
+        ; Chequear si es mayúscula
+        cmp al, 'A'
+        jb noEsAlpha_Print
+        cmp al, 'Z'
+        ja noEsAlpha_Print
+        mov bx, [bp+6]
+        mov byte ptr [bx], 1
+        jmp finEsAlpha
+    noEsAlpha_Print:
+        ; No es un dígito
+        mov bx, [bp+6]
+        mov byte ptr [bx], 0
+    finEsAlpha:
+        ret 2
+    endp
+
+    toMayuscula proc far
+        mov bp, sp
+        mov al, byte ptr[bp+4]  
+        cmp al, 'a'
+        jb printMayusculaDirectly ; If less than 'a', it's not a lowercase letter
+        cmp al, 'z'
+        ja printMayusculaDirectly
+        sub al, 20h
+    printMayusculaDirectly:
+        mov bx, [bp+6]
+        mov byte ptr [bx], al
+        ret 2
+    endp
+
+    toMinuscula proc far
+        mov bp, sp
+        mov al, byte ptr[bp+4]  
+        cmp al, 'A'
+        jb printMinusculaDirectly ; If less than 'A', it's not an uppercase letter
+        cmp al, 'Z'
+        ja printMinusculaDirectly
+        add al, 20h
+    printMinusculaDirectly:
+        mov bx, [bp+6]
+        mov byte ptr [bx], al
+        ret 2
+    endp
+
+    input proc far
+        mov bp, sp
+        mov dx, [bp+4]  ; bx = dir de la string
+        mov ah, 0Ah
+        int 21h
+        ret 2
+    endp
 procedimientos Ends
 end
