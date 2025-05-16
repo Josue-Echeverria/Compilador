@@ -23,7 +23,7 @@ datos segment
     mensajeResultadoOr  db 10,13,'Resultado OR: $'
     mensajeResultadoAnd db 10,13,'Resultado AND: $'
     mensajeResultadoXor db 10,13,'Resultado XOR: $'
-    mensajeResultadoNot db 10,13,'Resultado NOT (del primer valor): $'
+    mensajeResultadoNot db 10,13,'Resultado NOT (del segundo valor): $'
     
     bool1 db ?               ; Almacena el primer valor booleano ingresado (caracter)
     bool2 db ?               ; Almacena el segundo valor booleano ingresado (caracter)
@@ -105,8 +105,6 @@ inicio:
 
     ; --- OPERACION NOT (sobre el primer valor, bh) ---
     xor ah, ah
-    mov al, bool1
-    push ax
     mov al, bool2
     push ax
     push offset resultadoChar

@@ -36,7 +36,7 @@ datos Segment
 datos Ends
 
 procedimientos Segment
-    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString, archivotochar,archivotostring, checkStringIndex, input, getStringLength, concatString, findChar, underCutString, orOperand, andOperand, xorOperand, notOperand, esDigito, esAlpha, toMayuscula, toMinuscula
+    public stringtoint, inttostring, print, booltoint, archivotoint, stringtoboolean, printBool, inttobool, chartobool, archivotobool, addUpString, archivotochar,archivotostring, checkStringIndex, input, getStringLength, concatString, findChar, underCutString, orOperand, andOperand, xorOperand, notOperand, esDigito, esAlpha, toMayuscula, toMinuscula, pluOperand, minOperand, mulOperand, divOperand, modOperand, decOperand, incOperand
     assume cs:procedimientos, ds:datos
 
     print proc far ; input : push offset string 
@@ -439,7 +439,6 @@ procedimientos Segment
         retf 4
     endp
 
-    ; Verifica que la posicion existe en el string
     checkStringIndex proc far
         mov bp, sp
         mov bx, [bp+4]  ; bx = dir de la string 
@@ -595,7 +594,6 @@ procedimientos Segment
 
     notOperand proc far
         mov bp, sp
-        mov bx, [bp+8]  ; bx = dir de la string
         mov ax, [bp+6]  ; ax = primer operando
         xor al, 1   ; Invierte el bit (0 se vuelve 1, 1 se vuelve 0)
         add al, '0'
@@ -678,6 +676,87 @@ procedimientos Segment
         mov byte ptr [bx], al
         ret 2
     endp
+
+    pluOperand proc far
+        mov bp, sp
+        xor ax, ax
+        xor dx, dx
+        mov dx, [bp+8]  
+        mov ax, [bp+6]  
+        mov bx, [bp+4]  
+        add ax, dx
+        mov [bx], ax
+        ret 6
+    endp
+
+    minOperand proc far
+        mov bp, sp
+        xor ax, ax
+        xor dx, dx
+        mov dx, [bp+8]  
+        mov ax, [bp+6]  
+        mov bx, [bp+4]  
+        sub ax, dx
+        mov [bx], ax
+        ret 6
+    endp
+
+    mulOperand proc far        
+        mov bp, sp
+        xor ax, ax
+        xor dx, dx
+        mov dx, [bp+8]  
+        mov ax, [bp+6]  
+        mov bx, [bp+4]  
+        mul dx
+        mov [bx], ax
+        ret 6
+    endp
+
+    divOperand proc far
+        mov bp, sp
+        xor ax, ax
+        xor cx, cx
+        mov cx, [bp+8]  
+        mov ax, [bp+6]  
+        mov bx, [bp+4]  
+        xor dx, dx
+        div cx
+        mov [bx], ax
+        ret 6
+    endp
+
+    modOperand proc far
+        mov bp, sp
+        xor ax, ax
+        xor cx, cx
+        mov cx, [bp+8]  
+        mov ax, [bp+6]  
+        mov bx, [bp+4]  
+        xor dx, dx
+        div cx
+        mov [bx], dx
+        ret 6
+    endp
+
+    decOperand proc far
+        mov bp, sp
+        mov bx, [bp+4]
+        mov ax, [bx]
+        dec ax
+        mov [bx], ax
+        ret 2
+    endp
+
+    incOperand proc far
+        mov bp, sp
+        mov bx, [bp+4]
+        mov ax, [bx]
+        inc ax
+        mov [bx], ax
+        ret 2
+    endp
+
 
     input proc far
         mov bp, sp
