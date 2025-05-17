@@ -11,7 +11,7 @@ PolloCrudo
 
     resultado = upper letra;
 
-    return resultado;
+    respawn resultado;
 PolloAsado $$ End Spell
 
 Ritual main() $$ Procedimiento principal

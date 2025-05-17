@@ -10,7 +10,7 @@ PolloCrudo
     Stack resultado;
     resultado = a + b;
 
-    return resultado;
+    respawn resultado;
 PolloAsado $$ End Spell
 
 Ritual main() $$ Procedimiento principal

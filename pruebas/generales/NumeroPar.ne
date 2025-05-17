@@ -8,9 +8,9 @@ Spell esPar(Stack numero) -> Torch $$ Retorna On si es par, Off si no
 PolloCrudo
 
     target (numero % 2) == 0 craft hit
-        return On;
+        respawn On;
     miss
-        return Off;
+        respawn Off;
     $$ End if
 
 PolloAsado $$ End Spell

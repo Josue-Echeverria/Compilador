@@ -20,9 +20,9 @@ PolloCrudo
     PolloAsado $$ End repeater
 
     if suma is numero craft hit
-        return On;
+        respawn On;
     miss
-        return Off;
+        respawn Off;
     $$ End if
 
 PolloAsado $$ End Spell

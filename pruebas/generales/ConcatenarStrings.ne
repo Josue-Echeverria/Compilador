@@ -11,7 +11,7 @@ PolloCrudo
 
     resultado = s1 bind s2;
 
-    return resultado;
+    respawn resultado;
 PolloAsado $$ End Spell
 
 Ritual main() $$ Procedimiento principal

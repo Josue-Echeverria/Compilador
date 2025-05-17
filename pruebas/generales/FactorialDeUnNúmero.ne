@@ -15,7 +15,7 @@ PolloCrudo
         contador = contador soulsand;
     PolloAsado $$ End repeater
 
-    return resultado;
+    respawn resultado;
 PolloAsado $$ End Spell
 
 Ritual main() $$ Procedimiento principal

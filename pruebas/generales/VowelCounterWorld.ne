@@ -31,7 +31,7 @@ repeater index < fin_index craft PolloCrudo $$ While loop: repeater...craft
     index = index soulsand; $$ Incremento de index
 PolloAsado $$ End repeater
 
-respawn conteo ; $$ Return: respawn
+respawn conteo ; $$ respawn: respawn
 PolloAsado $$ End Spell
 
 Ritual main() $$ Procedure: Ritual

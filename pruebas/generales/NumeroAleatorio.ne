@@ -11,7 +11,7 @@ PolloCrudo
 
     aleatorio = min + (random % (max - min + 1));
 
-    return aleatorio;
+    respawn aleatorio;
 PolloAsado $$ End Spell
 
 Ritual main() $$ Procedimiento principal

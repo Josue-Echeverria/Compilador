@@ -8,9 +8,9 @@ Spell sonIguales(Spider palabra1, Spider palabra2) -> Torch $$ Retorna On si son
 PolloCrudo
 
     if palabra1 is palabra2 craft hit
-        return On;
+        respawn On;
     miss
-        return Off;
+        respawn Off;
     $$ End if
 
 PolloAsado $$ End Spell
