@@ -1,5 +1,5 @@
 ;-------------------------------------------;
-; Ejecuta lasfunciones para los strings     ;
+; Ejecuta las operaciones para los strings  ;
 ;                                           ;
 ; Creado por: Echeverria Josue              ;
 ;                                           ;
@@ -7,11 +7,10 @@
 ;                                           ;
 ; Forma de compilacion:                     ;
 ; Usando el turbo assembler.                ;
-;    tasm /zi /l dna                        ;
+;    tasm /zi /l str                        ;
 ;    tasm /zi /l lib                        ;
-;    tlink /v dna lib                       ;
+;    tlink /v str lib                       ;
 ;                                           ;
-; Fecha de creacion:mayo 16, 2025.          ;
 ;-------------------------------------------;
 
 extrn stringtoint:Far, print:Far, inttostring:Far, checkStringIndex:Far, input:Far, getStringLength:Far, concatString:Far, findChar:Far, underCutString:Far, booltoint:Far, archivotoint:Far

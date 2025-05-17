@@ -1,28 +1,17 @@
 ;-------------------------------------------;
-; RECIBE UNA CADENA DE DNA Y LUEGO SALE     ;
-; POR LA SALIDA ESTANDAR                    ;
+; Ejecuta operaciones aritmeticas           ;
 ;                                           ;
 ; Creado por: Echeverria Josue              ;
-;                                           ;
-; Descripcion:                              ;
-; Este programa pide una cadena de DNA      ;
-; (G, C, T, A) de un largo de maximo 1000   ; 
-; bases por medio de la entrada             ;
-; estandar y lo convierte a un boolean y    ;
-; luego lo convierte a un string para       ;
-; mostrarlo en la salida estandar.          ;
 ;                                           ;
 ;-------------------------------------------;
 ;                                           ;
 ; Forma de compilacion:                     ;
 ; Usando el turbo assembler.                ;
-;    tasm /zi /l dna                        ;
+;    tasm /zi /l int                        ;
 ;    tasm /zi /l lib                        ;
-;    tlink /v dna lib                       ;
+;    tlink /v int lib                       ;
 ;                                           ;
-; Fecha de creacion: Marzo 03, 2025.        ;
 ;-------------------------------------------;
-; filepath: c:\Users\Asus\Cursos\AC\TASM\BIN\op-i.asm
 
 extrn print:Far, input:Far, stringtoint:Far, inttostring:Far, pluOperand:Far, minOperand:Far, mulOperand:Far, divOperand:Far, modOperand:Far, incOperand:Far, decOperand:Far
 Assume CS:codigo, DS:datos

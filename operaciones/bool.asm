@@ -1,5 +1,5 @@
 ;-------------------------------------------;
-; Ejecuta lasfunciones para los strings     ;
+; Ejecuta las operaciones para los booleanos;
 ;                                           ;
 ; Creado por: Echeverria Josue              ;
 ;                                           ;
@@ -7,11 +7,10 @@
 ;                                           ;
 ; Forma de compilacion:                     ;
 ; Usando el turbo assembler.                ;
-;    tasm /zi /l dna                        ;
+;    tasm /zi /l bool                       ;
 ;    tasm /zi /l lib                        ;
-;    tlink /v dna lib                       ;
+;    tlink /v bool lib                      ;
 ;                                           ;
-; Fecha de creacion:mayo 16, 2025.          ;
 ;-------------------------------------------;
 
 extrn print:Far, booltoint:Far, orOperand:Far, andOperand:Far, xorOperand:Far, notOperand:Far
