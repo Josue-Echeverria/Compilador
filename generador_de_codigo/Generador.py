@@ -1,301 +1,285 @@
 import os
+import statement_generators
 
 class Generador:
     def __init__(self):
-        self.data_lines = []  # Para lineas en el segmento 'datos' (ej: "VG_varName dw 0")
-        self.code_lines = []  # Para lineas en el segmento 'codigo' (ej: "    mov ax, VG_varName")
-        self.variables = set() # Para rastrear nombres de variables declaradas (sin el prefijo VG_)
+        self.data_lines = []
+        self.code_lines = []
+        self.variables = set() # Nombres de variables declaradas
+        self.variables_types = {} # Mapea nombre de variable a su tipo ASM ('db', 'dw')
         self._label_counter = 0
-        self.variable_prefix = "VG_" # Prefijo para variables globales
+        self.variable_prefix = "VG_"
         self._literal_label_counter = 0
-        self.literals_pool = {} # Para rastrear literales y sus etiquetas {literal_valor: etiqueta_asm}
-        self.literal_data_lines = [] # Para lineas de datos del pool de literales
-        self.constant_labels = {} # Para mapear nombres de constantes a sus etiquetas
+        self.literals_pool = {}
+        self.literal_data_lines = []
+        self.constant_labels = {}
 
-        # For common data elements
         self.temp_int_buffer_name = "VG_tempIntStr"
         self.temp_char_buffer_name = "VG_tempCharStr"
+        self.temp_bool_buffer_name = "VG_tempBoolStr"
         self.newline_label_name = "VG_CRLF"
+        self.temp_int_holder_name = "VG_tempIntHolder"
         
-        self.true_str_label_val = None
-        self.false_str_label_val = None
-        self.newline_label_val = None # Will hold the actual label for newline
+        # For character operations
+        self.char_op_bool_result_var = "VG_charOpBoolRes"  # For esDigito, esAlpha
+        self.char_op_char_result_var = "VG_charOpCharRes"  # For toMayuscula, toMinuscula
+        
+        self.newline_label_val = None
         self._common_data_initialized = False
+        self.loop_label_stack = [] 
+        self._initialize_handler_map()
+
+    def _initialize_handler_map(self):
+        self.handler_map = {
+            "asignacion": statement_generators.handle_asignacion,
+            "imprimir_constante_string": statement_generators.handle_imprimir_constante_string,
+            "imprimir_newline": statement_generators.handle_imprimir_newline,
+            "imprimir_int": statement_generators.handle_imprimir_int,
+            "imprimir_bool": statement_generators.handle_imprimir_bool,
+            "imprimir_char": statement_generators.handle_imprimir_char,
+            "if": statement_generators.handle_if,
+            "while": statement_generators.handle_while, 
+            "break": statement_generators.handle_break, 
+            "continue": statement_generators.handle_continue,
+            "halt": statement_generators.handle_halt,
+            "switch": statement_generators.handle_switch,
+            "for": statement_generators.handle_for,
+            "repeat_until": statement_generators.handle_repeat_until,
+        }
 
     def _reset(self):
-        """Limpia cualquier codigo y variables generados previamente."""
         self.data_lines = []
         self.code_lines = []
         self.variables = set()
+        self.variables_types = {} 
         self._label_counter = 0
         self._literal_label_counter = 0
         self.literals_pool = {}
         self.literal_data_lines = []
         self.constant_labels = {}
-        
-        self.true_str_label_val = None
-        self.false_str_label_val = None
         self.newline_label_val = None
         self._common_data_initialized = False
+        self.loop_label_stack = []
 
     def _ensure_common_data_declared(self):
         if not self._common_data_initialized:
             self.emit_data_line(f"{self.temp_int_buffer_name} db 7 dup(?), '$'")
-            self.emit_data_line(f"{self.temp_char_buffer_name} db ?, '$'")
-            self.emit_data_line(f"{self.newline_label_name} db 13, 10, '$'")
-            self.newline_label_val = self.newline_label_name # Use the fixed name as label
+            self.emit_data_line(f"{self.temp_char_buffer_name} db 2 dup(?), '$'") # For single char + $
+            self.emit_data_line(f"{self.temp_bool_buffer_name} db 6 dup(?), '$'") # "false$"
+            self.emit_data_line(f"{self.temp_int_holder_name} dw ?")
+            
+            # Variables para resultados de operaciones de caracteres
+            self.emit_data_line(f"{self.char_op_bool_result_var} db ?")      # Para esDigito, esAlpha (0 o 1)
+            self.emit_data_line(f"{self.char_op_char_result_var} db ?, '$'") # Para toMayuscula, toMinuscula
 
-            self.true_str_label_val = self.declare_string_literal("true")
-            self.false_str_label_val = self.declare_string_literal("false")
+            self.emit_data_line(f"{self.newline_label_name} db 13, 10, '$'")
+            self.newline_label_val = self.newline_label_name
             self._common_data_initialized = True
 
     def _get_next_label(self, base_name="Et"):
-        """Genera una etiqueta unica."""
-        label = f"{base_name}{self._label_counter:03d}" # Ej: Et000, Et001
+        label = f"{base_name}{self._label_counter:03d}"
         self._label_counter += 1
         return label
 
     def _get_next_literal_label(self, base_name="LitStr"):
-        """Genera una etiqueta unica para un literal en el pool."""
         label = f"{base_name}{self._literal_label_counter:03d}"
         self._literal_label_counter += 1
         return label
 
     def emit_data_line(self, line):
-        """Anade una linea al segmento 'datos'. Se espera algo como 'VG_varName dw 0'."""
-        self.data_lines.append(f"    {line}") # Anadir indentacion
+        self.data_lines.append(f"    {line}")
 
     def emit_code_line(self, line):
-        """Anade una linea de instruccion ensamblador al segmento 'codigo'."""
-        self.code_lines.append(f"    {line}") # Anadir indentacion
+        self.code_lines.append(f"    {line}")
 
     def declare_string_literal(self, string_value):
-        """
-        Declara un literal de cadena en el pool de literales si no existe.
-        Devuelve la etiqueta ASM para este literal.
-        Las cadenas se almacenan terminadas en '$' para int 21h, ah=09h.
-        """
         if string_value in self.literals_pool:
             return self.literals_pool[string_value]
-        
         label = self._get_next_literal_label()
-        # TASM permite definir strings con comillas. El '$' es para terminador de int 21h, ah=09h.
         self.literal_data_lines.append(f"    {label} db \"{string_value}\", '$'")
         self.literals_pool[string_value] = label
         return label
 
     def declare_variable(self, name, var_type="dw", initial_value="0"):
-        """
-        Declara una variable en el segmento 'datos' si no ha sido declarada.
-        Usa el prefijo VG_ para el nombre en ensamblador.
-        'name' es el nombre original de la variable.
-        """
         if name not in self.variables:
             asm_var_name = f"{self.variable_prefix}{name}"
-            # Handle character literals like 'A' for db
+            actual_initial_value = initial_value
+            
+            # Ajustar valor inicial para literales de caracter
             if var_type == "db" and isinstance(initial_value, str) and \
-               len(initial_value) == 3 and initial_value.startswith("'") and initial_value.endswith("'"):
-                self.emit_data_line(f"{asm_var_name} {var_type} {initial_value}")
-            else:
-                self.emit_data_line(f"{asm_var_name} {var_type} {initial_value}")
-            self.variables.add(name) # Guardar el nombre original
+               initial_value.startswith("'") and initial_value.endswith("'") and len(initial_value) == 3:
+                # El valor ya esta como 'X', que es valido para TASM db
+                pass 
+            elif isinstance(initial_value, int):
+                 actual_initial_value = str(initial_value) # Convertir int a string para la linea de datos
+            else: # Default para otros casos o si el valor inicial no coincide con el tipo
+                 actual_initial_value = "0" # Default para db y dw si no es especifico
 
-    def generate_literal_to_register(self, value, register="ax"):
-        """Genera codigo para mover un valor literal a un registro."""
-        self.emit_code_line(f"mov {register}, {value}")
-        return register
+            self.emit_data_line(f"{asm_var_name} {var_type} {actual_initial_value}")
+            self.variables.add(name)
+            self.variables_types[name] = var_type
+        elif self.variables_types.get(name) != var_type:
+            # Opcional: Advertir o error si se intenta redeclarar con tipo diferente
+            # print(f"Advertencia: Variable '{name}' ya declarada como {self.variables_types.get(name)}, intentando redeclarar como {var_type}.")
+            pass
 
-    def generate_variable_to_register(self, var_name, register="ax"):
-        """
-        Genera codigo para mover el valor de una variable a un registro.
-        'var_name' es el nombre original de la variable.
-        """
-        self.declare_variable(var_name) # Asegurar que la variable este declarada (con prefijo VG_)
-        asm_var_name = f"{self.variable_prefix}{var_name}"
-        
-        # Aqui se necesitaria informacion del tipo de var_name para la pila paralela de tipos
-        # y para decidir si mover el valor directamente o un puntero.
-        self.emit_code_line(f"mov {register}, [{asm_var_name}]") 
-        return register
 
     def generate_expression(self, node):
-        """
-        Genera codigo ensamblador para una expresion.
-        El resultado de la expresion estara en el registro AX.
-        Deberia interactuar con una pila paralela de tipos.
-        """
-        if isinstance(node, int):
-            # PilaParalelaTipos.push(TEntero)
-            return self.generate_literal_to_register(node, "ax")
-        elif isinstance(node, str) and node not in ["+", "-", "*", "/"]:  # Asumimos que es nombre de variable
-            # Si fuera un literal de string directo en una expresion, se manejaria aqui
-            # llamando a declare_string_literal y luego usando su etiqueta (probablemente con LEA)
-            return self.generate_variable_to_register(node, "ax")
-        elif isinstance(node, dict):  # Operacion binaria
-            op = node["op"]
-            left_node = node["left"]
-            right_node = node["right"]
-
-            # Generar codigo para operando izquierdo
-            self.generate_expression(left_node) # Resultado en AX
-            # tipo_izq = PilaParalelaTipos.pop()
-            self.emit_code_line("push ax")
-
-            # Generar codigo para operando derecho
-            self.generate_expression(right_node) # Resultado en AX
-            # tipo_der = PilaParalelaTipos.pop()
-            self.emit_code_line("pop bx") # AX = operando_derecho, BX = operando_izquierdo
-
-            # Aqui se realizarian chequeos de tipo usando tipo_izq y tipo_der
-            # y se podrian llamar a rutinas de conversion si es necesario (ej. str2int)
-            # if tipo_izq != TEntero or tipo_der != TEntero: error o conversion
-
-            if op == "+":
-                self.emit_code_line("add bx, ax")
-                self.emit_code_line("mov ax, bx")
-            elif op == "-":
-                self.emit_code_line("sub bx, ax")
-                self.emit_code_line("mov ax, bx")
-            elif op == "*":
-                self.emit_code_line("imul bx") # AX = AX * BX
-            elif op == "/":
-                # Chequeo de division por cero:
-                # self.emit_code_line("cmp ax, 0") ; AX tiene el divisor (operando_derecho)
-                # et_error_div_cero = self._get_next_label("ErrDivCero")
-                # self.emit_code_line(f"je {et_error_div_cero}")
-                self.emit_code_line("mov cx, ax") # CX = divisor (derecho)
-                self.emit_code_line("mov ax, bx") # AX = dividendo (izquierdo)
-                self.emit_code_line("cwd")      # Extender signo de AX a DX:AX
-                self.emit_code_line("idiv cx")  # AX = cociente, DX = resto
-                # self.emit_code_line(f"{et_error_div_cero}: ; Manejo del error aqui")
-            else:
-                raise ValueError(f"Operador binario no soportado: {op}")
-            # PilaParalelaTipos.push(TEnteroResultado) o el tipo resultante
+        self._ensure_common_data_declared() # Asegurar que los helpers esten declarados
+        if isinstance(node, int): # Integer literal
+            self.emit_code_line(f"mov ax, {node}")
             return "ax"
-        else:
-            raise TypeError(f"Tipo de nodo no soportado en expresion: {type(node)}")
+        elif isinstance(node, str): # Could be char literal or variable name
+            if node.startswith("'") and node.endswith("'") and len(node) == 3: 
+                # Es un literal de caracter, ej: 'A'
+                self.emit_code_line(f"mov al, {node}") # {node} se expandira a 'A'
+                self.emit_code_line("mov ah, 0")       # Limpiar AH para tener el char en AX
+                return "ax" 
+            # Variable name
+            # Excluir operadores conocidos y palabras clave de sentencias
+            elif node not in ["+", "-", "*", "/", "==", "!=", ">", "<", ">=", "<="] and \
+                 node not in self.handler_map and \
+                 node not in ["esDigito", "esAlpha", "toMayuscula", "toMinuscula"]: # Evitar confundir nombres de op con vars
+                
+                asm_var_name = f"{self.variable_prefix}{node}"
+                if node not in self.variables:
+                    # Idealmente, esto seria un error de "variable no declarada" detectado por el analizador semantico.
+                    # Por ahora, si no esta declarada, asumimos 'dw' y la declaramos, lo cual es arriesgado.
+                    # Es mejor que las variables se declaren via 'asignacion' primero.
+                    print(f"Advertencia: Variable '{node}' usada en expresion sin declaracion previa explicita. Asumiendo dw.")
+                    self.declare_variable(node, "dw") # Declaracion implicita riesgosa
+                
+                var_declared_type = self.variables_types.get(node, "dw") # Default a dw si no se encuentra
+                if var_declared_type == "db":
+                    self.emit_code_line(f"mov al, [{asm_var_name}]")
+                    self.emit_code_line("mov ah, 0") # Poner el char en AL, limpiar AH
+                else: # dw
+                    self.emit_code_line(f"mov ax, [{asm_var_name}]")
+                return "ax"
+            else: # Nodo string no reconocido como literal o variable valida
+                raise TypeError(f"Nodo de expresion string no reconocido o mal formado: {node}")
 
-    def generate_assignment(self, target_var_name, value_node):
-        """
-        Genera codigo para una sentencia de asignacion: VG_destino = valor.
-        'target_var_name' es el nombre original de la variable.
-        """
-        # Determine type for declaration, default to dw.
-        # A real compiler would use a symbol table here.
-        # For the test, specific variables are pre-declared with 'db'.
-        var_type = "dw" # Default, overridden if pre-declared differently
-        if target_var_name in ["miBooleano", "miCaracter"]: # Hack for test
-             var_type = "db"
+        elif isinstance(node, dict): # Complex expression
+            # Unary character operations
+            if node.get("type") == "unary_char_op":
+                op_name = node["op"]    # e.g., "esDigito", "toMayuscula"
+                operand_node = node["operand"]
 
-        self.declare_variable(target_var_name, var_type) 
-        asm_target_name = f"{self.variable_prefix}{target_var_name}"
-        
-        result_register = self.generate_expression(value_node) # Resultado en AX
-        
-        if var_type == "db":
-            self.emit_code_line(f"mov byte ptr [{asm_target_name}], al")
-        else:
-            self.emit_code_line(f"mov [{asm_target_name}], {result_register}")
+                self.generate_expression(operand_node) 
+                # El operando (caracter) esta ahora en AX (principalmente AL)
 
+                if op_name in ["esDigito", "esAlpha"]:
+                    self.emit_code_line(f"push offset {self.char_op_bool_result_var}")
+                    self.emit_code_line("push ax") # Pasa el caracter en AL
+                    self.emit_code_line(f"call {op_name}")
+                    self.emit_code_line(f"mov al, [{self.char_op_bool_result_var}]")
+                    self.emit_code_line("mov ah, 0") # Resultado (0 o 1) en AX
+                elif op_name in ["toMayuscula", "toMinuscula"]:
+                    self.emit_code_line(f"push offset {self.char_op_char_result_var}")
+                    self.emit_code_line("push ax") # Pasa el caracter en AL
+                    self.emit_code_line(f"call {op_name}")
+                    self.emit_code_line(f"mov al, [{self.char_op_char_result_var}]")
+                    self.emit_code_line("mov ah, 0") # Caracter resultado en AL, AH=0
+                else:
+                    raise ValueError(f"Operador de caracter unario no soportado: {op_name}")
+                return "ax" # El resultado de la operacion de caracter esta en AX
+
+            # Binary operations (arithmetic, comparison)
+            elif "op" in node and "left" in node and "right" in node:
+                op = node["op"]
+                left_node = node["left"]
+                right_node = node["right"]
+
+                self.generate_expression(left_node)
+                self.emit_code_line("push ax")
+                self.generate_expression(right_node) # El resultado del lado derecho queda en AX
+                self.emit_code_line("pop bx") # El resultado del lado izquierdo esta en BX
+
+                # Ahora BX tiene el operando izquierdo, AX tiene el operando derecho
+
+                if op == "+":
+                    self.emit_code_line("add bx, ax")
+                    self.emit_code_line("mov ax, bx")
+                elif op == "-":
+                    self.emit_code_line("sub bx, ax")
+                    self.emit_code_line("mov ax, bx")
+                elif op == "*":
+                    self.emit_code_line("mov cx, ax") # Guardar el derecho temporalmente
+                    self.emit_code_line("mov ax, bx") # Mover el izquierdo a AX
+                    self.emit_code_line("mul cx")   # AX = AX * CX
+                elif op == "/":
+                    self.emit_code_line("mov cx, ax") # Divisor (derecho) a CX
+                    self.emit_code_line("mov ax, bx") # Dividendo (izquierdo) a AX
+                    self.emit_code_line("cwd")        # Extender signo de AX a DX:AX
+                    self.emit_code_line("div cx")    # Cociente en AX, Resto en DX
+                elif op in ["==", "!=", ">", "<", ">=", "<="]:
+                    self.emit_code_line("cmp bx, ax") # Compara izquierdo (BX) con derecho (AX)
+                    
+                    true_label = self._get_next_label("TrueCond")
+                    end_cond_label = self._get_next_label("EndCond")
+                    
+                    jump_instruction = ""
+                    if op == "==": jump_instruction = "je"
+                    elif op == "!=": jump_instruction = "jne"
+                    elif op == ">": jump_instruction = "jg" 
+                    elif op == "<": jump_instruction = "jl"  
+                    elif op == ">=": jump_instruction = "jge" 
+                    elif op == "<=": jump_instruction = "jle" 
+                    
+                    self.emit_code_line(f"{jump_instruction} {true_label}")
+                    
+                    self.emit_code_line("mov ax, 0") # Falso
+                    self.emit_code_line(f"jmp {end_cond_label}")
+                    
+                    self.emit_code_line(f"{true_label}:")
+                    self.emit_code_line("mov ax, 1") # Verdadero
+                    
+                    self.emit_code_line(f"{end_cond_label}:")
+                else:
+                    raise ValueError(f"Operador binario no soportado: {op}")
+                return "ax" 
+            else:
+                raise TypeError(f"Tipo de nodo no soportado en expresion: {type(node)}")
 
     def process_ast_body(self, ast_body):
-        """Procesa la lista de sentencias en el cuerpo del AST."""
-        self._ensure_common_data_declared() # Ensure buffers, newline, true/false strings are set up
+        self._ensure_common_data_declared()
 
         for statement in ast_body:
             stype = statement["type"]
-            if stype == "asignacion":
-                self.generate_assignment(statement["target"], statement["value"])
-            elif stype == "imprimir_constante_string":
-                const_name = statement["const_name"]
-                if const_name in self.constant_labels:
-                    label = self.constant_labels[const_name]
-                    self.emit_code_line(f"push offset {label}")
-                    self.emit_code_line("call print")
-                    self.emit_code_line("") 
-                else:
-                    print(f"Error: Constante string '{const_name}' no definida.")
-            elif stype == "imprimir_newline":
-                self.emit_code_line(f"push offset {self.newline_label_val}")
-                self.emit_code_line("call print")
-            elif stype == "imprimir_int":
-                if statement["source_type"] == "literal":
-                    self.emit_code_line(f"mov ax, {statement['value']}")
-                elif statement["source_type"] == "variable":
-                    asm_var_name = f"{self.variable_prefix}{statement['name']}"
-                    self.declare_variable(statement['name'], "dw") # Ensure var is known
-                    self.emit_code_line(f"mov ax, [{asm_var_name}]")
-                self.emit_code_line(f"mov bx, offset {self.temp_int_buffer_name}")
-                self.emit_code_line("add bx, 5") # inttostring fills right-to-left
-                self.emit_code_line("call inttostring")
-                self.emit_code_line(f"push offset {self.temp_int_buffer_name}")
-                self.emit_code_line("call print")
-            elif stype == "imprimir_bool":
-                false_label = self._get_next_label("FalseBool")
-                endif_label = self._get_next_label("EndBool")
-                if statement["source_type"] == "literal":
-                    self.emit_code_line(f"mov al, {statement['value']}")
-                elif statement["source_type"] == "variable":
-                    asm_var_name = f"{self.variable_prefix}{statement['name']}"
-                    self.declare_variable(statement['name'], "db") # booltoint expects db
-                    self.emit_code_line(f"push offset {asm_var_name}")
-                    self.emit_code_line("call booltoint") # Result in AL
-                    # booltoint might not need pop if it cleans stack or if AL is just used
-                
-                if statement["source_type"] == "variable": # AL is set by booltoint
-                    self.emit_code_line("cmp al, 1")
-                else: # AL was set by mov al, literal
-                    self.emit_code_line("cmp al, 1")
-
-                self.emit_code_line(f"jne {false_label}")
-                self.emit_code_line(f"push offset {self.true_str_label_val}")
-                self.emit_code_line(f"jmp {endif_label}")
-                self.emit_code_line(f"{false_label}:")
-                self.emit_code_line(f"push offset {self.false_str_label_val}")
-                self.emit_code_line(f"{endif_label}:")
-                self.emit_code_line("call print")
-            elif stype == "imprimir_char":
-                if statement["source_type"] == "literal":
-                    # Assuming literal is ASCII value or char like 'A'
-                    char_val = statement['value']
-                    if isinstance(char_val, str) and len(char_val) == 3 and char_val.startswith("'"):
-                         self.emit_code_line(f"mov al, {char_val}")
-                    else: # Assuming it's an integer ASCII value
-                         self.emit_code_line(f"mov al, {char_val}")
-                elif statement["source_type"] == "variable":
-                    asm_var_name = f"{self.variable_prefix}{statement['name']}"
-                    self.declare_variable(statement['name'], "db") # Chars are bytes
-                    self.emit_code_line(f"mov al, [{asm_var_name}]")
-                self.emit_code_line(f"mov [{self.temp_char_buffer_name}], al")
-                self.emit_code_line(f"push offset {self.temp_char_buffer_name}")
-                self.emit_code_line("call print")
+            # Usar el handler_map de la instancia
+            handler = self.handler_map.get(stype) 
+            if handler:
+                handler(self, statement) 
+            else:
+                print(f"Advertencia: Tipo de sentencia no reconocido '{stype}'")
             
-            self.emit_code_line("") # Blank line for readability after each processed statement
+            self.emit_code_line("")
 
+    def process_single_statement(self, statement_node):
+        """Procesa un unico nodo de sentencia del AST."""
+        if not statement_node:
+            return
+        stype = statement_node["type"]
+        handler = self.handler_map.get(stype)
+        if handler:
+            handler(self, statement_node)
+        else:
+            print(f"Advertencia: Tipo de sentencia no reconocido en process_single_statement '{stype}'")
 
     def get_assembled_code(self, ast):
-        """
-        Genera la cadena completa de codigo ensamblador a partir del AST.
-        """
         self._reset() 
 
-        # Para procesar constantes de string, si el AST las tiene
         if "constants" in ast:
            for const_def in ast["constants"]:
                if const_def["type"] == "string":
-                   # Declarar el literal y guardar su etiqueta asociada al nombre de la constante
                    label = self.declare_string_literal(const_def["value"])
                    self.constant_labels[const_def["name"]] = label
         
         if "body" in ast:
-            # Call _ensure_common_data_declared once before processing body,
-            # as print operations in body will rely on these.
-            self._ensure_common_data_declared()
             self.process_ast_body(ast["body"])
         else:
             print("Advertencia: El AST no tiene 'body'.")
 
-        # Obtener la fecha actual para la portada
         from datetime import datetime
         fecha_actual = datetime.now().strftime("%d de %B de %Y, %H:%M:%S")
 
@@ -306,28 +290,26 @@ class Generador:
         full_asm_code.append("; Lenguaje Fuente: Notch Engine")
         full_asm_code.append(";---------------------------------------------------------------------")
         full_asm_code.append("")
-
-        full_asm_code.append("extrn stringtoint:Far, print:Far, inttostring:Far, booltoint:Far, archivotoint:Far") 
+        # Se eliminan preparaSsalidaBooleano y preparaSsalidaCaracter de extrn
+        full_asm_code.append("extrn print:Far, inttostring:Far, esDigito:Far, esAlpha:Far, toMayuscula:Far, toMinuscula:Far") 
         full_asm_code.append("Assume CS:codigo, DS:datos") 
         full_asm_code.append("")
 
         full_asm_code.append("datos segment")
-        if self.literal_data_lines: # User-defined string constants
+        
+        common_data_lines_emitted = [line for line in self.data_lines if any(fixed_name in line for fixed_name in [
+            self.temp_int_buffer_name, self.temp_char_buffer_name, self.newline_label_name,
+            self.temp_bool_buffer_name, self.temp_int_holder_name
+            # temp_bool_holder_name y temp_char_holder_name eliminados de esta lista
+        ])]
+        user_variables_data = [line for line in self.data_lines if line not in common_data_lines_emitted]
+        
+        if self.literal_data_lines:
             full_asm_code.extend(self.literal_data_lines)
-        
-        # Add common data lines (buffers, newline string) which were populated by emit_data_line
-        # These are already in self.data_lines if _ensure_common_data_declared was called & emitted.
-        # No, _ensure_common_data_declared calls emit_data_line, so they are mixed with variable data_lines.
-        # This is fine. Let's ensure data_lines (variables) are printed after literals.
-        
-        # Print variables declared by user
-        user_variables_data = [line for line in self.data_lines if not any(fixed_name in line for fixed_name in [self.temp_int_buffer_name, self.temp_char_buffer_name, self.newline_label_name])]
-        # Print common buffers/strings (which were added to self.data_lines by _ensure_common_data_declared)
-        common_data_lines_emitted = [line for line in self.data_lines if any(fixed_name in line for fixed_name in [self.temp_int_buffer_name, self.temp_char_buffer_name, self.newline_label_name])]
-        
-        full_asm_code.extend(common_data_lines_emitted) # Common data first
+
+        full_asm_code.extend(common_data_lines_emitted)
         if user_variables_data:
-            full_asm_code.extend(user_variables_data) # Then user variables
+            full_asm_code.extend(user_variables_data)
 
         if not self.literal_data_lines and not self.data_lines:
             full_asm_code.append("    ; No hay datos declarados")
@@ -354,73 +336,119 @@ class Generador:
         return "\n".join(full_asm_code)
 
     def save_to_file(self, asm_code_string, filename="output.asm"):
-        """Guarda la cadena de codigo ensamblador proporcionada a un archivo."""
         try:
-            # Asegurarse de que el directorio exista
             output_dir = os.path.dirname(filename)
-            if output_dir: # Solo crear si el path no es solo un nombre de archivo
-                 os.makedirs(output_dir, exist_ok=True)
+            if output_dir and not os.path.exists(output_dir):
+                 os.makedirs(output_dir)
             with open(filename, "w") as f:
                 f.write(asm_code_string)
-            print(f"Codigo ensamblador guardado exitosamente en {filename}")
+            print(f"Codigo ensamblador guardado en {filename}")
         except IOError as e:
             print(f"Error guardando archivo {filename}: {e}")
 
-# Ejemplo de Uso y Prueba:
 if __name__ == "__main__":
-    
-    # generator = Generador()
-
-    # Pre-declare variables for the test to ensure correct types (db for bool/char)
-    # declare_variable adds them to self.variables, so generate_assignment won't redeclare them with 'dw'
-    # generator.declare_variable("miEntero", "dw", "0") # Initialized by assignment later
-    # generator.declare_variable("miBooleano", "db", "0") # Initialized by assignment later
-    # generator.declare_variable("miCaracter", "db", "0") # Initialized by assignment later
+    generator = Generador()
     
     ast = {
        "constants": [ 
-          {"name": "MENSAJE_BIENVENIDA", "type": "string", "value": "Bienvenido al programa"},
-          {"name": "NOMBRE_ARCHIVO_CONST", "type": "string", "value": "config.sys"}
+          {"name": "MENSAJE_INICIO", "type": "string", "value": "Inicio de Pruebas"},
+          {"name": "MSG_THEN", "type": "string", "value": "Bloque THEN ejecutado"},
+          {"name": "MSG_ELSE", "type": "string", "value": "Bloque ELSE ejecutado"},
+          {"name": "MSG_FIN_WHILE", "type": "string", "value": "Fin del while"},
+          {"name": "MSG_SWITCH_CASE0", "type": "string", "value": "Switch: Caso 0"},
+          {"name": "MSG_SWITCH_CASE1", "type": "string", "value": "Switch: Caso 1"},
+          {"name": "MSG_SWITCH_DEFAULT", "type": "string", "value": "Switch: Default"},
+          {"name": "MSG_DENTRO_FOR", "type": "string", "value": "Dentro del FOR, i = "},
+          {"name": "MSG_FIN_FOR", "type": "string", "value": "Fin del FOR"},
+          {"name": "MSG_DENTRO_REPEAT", "type": "string", "value": "Dentro del REPEAT, c = "},
+          {"name": "MSG_FIN_REPEAT", "type": "string", "value": "Fin del REPEAT"}
        ],
        "body": [
-            {"type": "asignacion", "target": "miEntero", "value": 123},
-            {"type": "asignacion", "target": "miBooleano", "value": 1}, # 1 for true
-            {"type": "asignacion", "target": "miCaracter", "value": 65}, # ASCII for 'A'
-
-            {"type": "imprimir_constante_string", "const_name": "MENSAJE_BIENVENIDA"},
-            {"type": "imprimir_newline"},
-
-            {"type": "imprimir_int", "source_type": "variable", "name": "miEntero"},
-            {"type": "imprimir_newline"},
-            {"type": "imprimir_int", "source_type": "literal", "value": 456},
-            {"type": "imprimir_newline"},
-
-            {"type": "imprimir_bool", "source_type": "variable", "name": "miBooleano"},
-            {"type": "imprimir_newline"},
-            {"type": "imprimir_bool", "source_type": "literal", "value": 0}, # 0 for false
-            {"type": "imprimir_newline"},
-
-            {"type": "imprimir_char", "source_type": "variable", "name": "miCaracter"},
-            {"type": "imprimir_newline"},
-            {"type": "imprimir_char", "source_type": "literal", "value": "'B'"}, # Literal char 'B'
-            {"type": "imprimir_newline"},
-            {"type": "imprimir_char", "source_type": "literal", "value": 67}, # Literal ASCII for 'C'
-            {"type": "imprimir_newline"},
-
-            {"type": "imprimir_constante_string", "const_name": "NOMBRE_ARCHIVO_CONST"},
+            {"type": "imprimir_constante_string", "const_name": "MENSAJE_INICIO"},
             {"type": "imprimir_newline"},
             
-            # Original assignments from previous example
-            {"type": "asignacion", "target": "a", "value": 5},
-            {"type": "asignacion", "target": "b", "value": 7},
-            {"type": "asignacion", "target": "c", "value": {
-                "op": "+", "left": "a", "right": "b" 
-            }},
+            {"type": "asignacion", "target": "miBooleanoVar", "value": 0}, 
+            {"type": "asignacion", "target": "limiteFor", "value": 2}, # For mas corto
+            {"type": "asignacion", "target": "valorUno", "value": 1}, 
+
+            # Ejemplo IF-THEN-ELSE
+            # if miBooleanoVar (que es 0, o sea false) then ... else ...
+            {"type": "if",
+             "condition": "miBooleanoVar", # generate_expression se encarga de esto
+             "then_statements": [
+                 {"type": "imprimir_constante_string", "const_name": "MSG_THEN"},
+                 {"type": "imprimir_newline"}
+             ],
+             "else_statements": [
+                 {"type": "imprimir_constante_string", "const_name": "MSG_ELSE"},
+                 {"type": "imprimir_newline"}
+             ]
+            },
+
+            # Ejemplo REPEAT-UNTIL
+            {"type": "asignacion", "target": "contador_repeat", "value": 0},
+            {"type": "asignacion", "target": "limite_repeat", "value": 3},
+            {"type": "repeat_until",
+             "body_statements": [
+
+                 {"type": "imprimir_char", "source_type": "literal", "value": "'R'"}, # Indica Procesado (no saltado)
+                 {"type": "imprimir_newline"},
+                 {"type": "asignacion", "target": "contador_repeat", "value": {"op": "+", "left": "contador_repeat", "right": 1}}
+             ],
+             "condition": {"op": ">=", "left": "contador_repeat", "right": "limite_repeat"} # Repetir hasta que contador_repeat >= 3
+            },
+            {"type": "if", 
+            "condition": {"op": "==", "left": "contador_repeat", "right": 1}, # if contador_repeat == 1
+            "then_statements": [
+                {"type": "imprimir_char", "source_type": "literal", "value": "'K'"}, # Indica Skip (Continue)
+                {"type": "imprimir_newline"},
+                {"type": "asignacion", "target": "contador_repeat", "value": {"op": "+", "left": "contador_repeat", "right": 1}}, # Importante para evitar bucle infinito con continue
+                {"type": "continue"} # Saltara a la evaluacion de la condicion del repeat
+            ]
+            },
+            {"type": "imprimir_constante_string", "const_name": "MSG_FIN_REPEAT"},
+            {"type": "imprimir_newline"},
+
+# Ejemplo WHILE con nueva condicion
+            {"type": "while",
+             "condition": { "op": "<", "left": "contador", "right": "limiteWhile" }, # contador < 3
+             "body_statements": [
+                 {"type": "imprimir_constante_string", "const_name": "MSG_DENTRO_WHILE"},
+                 {"type": "imprimir_int", "source_type": "variable", "name": "contador"},
+                 {"type": "imprimir_newline"},
+                 
+
+                 {"type": "asignacion", "target": "contador", "value": {"op": "+", "left": "contador", "right": 1}}
+             ]
+            },
+            
+            # Ejemplo WHILE con nueva condicion
+            {"type": "while",
+             "condition": { "op": "<", "left": "contador", "right": "limiteWhile" }, # contador < 3
+             "body_statements": [
+                 {"type": "imprimir_constante_string", "const_name": "MSG_DENTRO_WHILE"},
+                 {"type": "imprimir_int", "source_type": "variable", "name": "contador"},
+                 {"type": "imprimir_newline"},
+                 
+            
+                 {"type": "asignacion", "target": "contador", "value": {"op": "+", "left": "contador", "right": 1}}
+             ]
+            },
+
+            #  toMayuscula con variable char_c_minus ('c') -> 'C'
+            {"type": "asignacion", "target": "resultadoChar", 
+             "value": {"type": "unary_char_op", "op": "toMayuscula", "operand": "char_c_minus"}},
+            {"type": "imprimir_constante_string", "const_name": "MSG_TO_MAYUS"},
+            {"type": "imprimir_char", "source_type": "variable", "name": "resultadoChar"},
+            {"type": "imprimir_newline"},
+
+            #  toMayuscula con variable char_7_dig ('7') -> '7' (sin cambios)
+            {"type": "asignacion", "target": "resultadoChar", 
+             "value": {"type": "unary_char_op", "op": "toMayuscula", "operand": "char_7_dig"}},
+            {"type": "imprimir_constante_string", "const_name": "MSG_TO_MAYUS"},
+            {"type": "imprimir_newline"},
         ]
     }
-
-    generator = Generador()
-
 
     generated_asm = generator.get_assembled_code(ast)
 

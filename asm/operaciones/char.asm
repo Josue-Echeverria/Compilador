@@ -13,7 +13,7 @@
 ;                                           ;
 ;-------------------------------------------;
 
-extrn print:Far, inttostring:Far, esDigito:Far, esAlpha:Far, toMayuscula:Far, toMinuscula:Far
+extrn print:Far, esDigito:Far, esAlpha:Far, toMayuscula:Far, toMinuscula:Far
 Assume CS:codigo, DS:datos
 
 datos segment
